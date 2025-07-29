@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Растущий огурец</title>
+  <title>Огурцы с текстом</title>
   <style>
     body {
       margin: 0;
@@ -16,9 +16,15 @@
       overflow: hidden;
     }
 
+    .container {
+      display: flex;
+      gap: 80px;
+      padding: 20px;
+    }
+
     .cucumber-container {
       position: relative;
-      width: 200px;
+      width: 100px;
       height: 300px;
       display: flex;
       justify-content: center;
@@ -50,46 +56,85 @@
       opacity: 0;
       transform: scale(0.1);
     }
+
+    .text {
+      position: absolute;
+      bottom: 0;
+      width: 200px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      color: #228B22;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+      opacity: 0;
+      transition: opacity 1s ease;
+      font-family: Arial, sans-serif;
+    }
+
+    .text.show {
+      opacity: 1;
+    }
   </style>
 </head>
 <body>
-  <div class="cucumber-container">
-    <div class="cucumber" id="cucumber">
-      <img src="https://i.pinimg.com/originals/fc/a7/66/fca766643693b021645b276bd61ad09e.png" alt="Огурец">
+  <div class="container">
+    <div class="cucumber-container">
+      <div class="cucumber" id="cucumber1" data-text="Люблю Лину">
+        <img src="https://i.pinimg.com/originals/fc/a7/66/fca766643693b021645b276bd61ad09e.png" alt="Огурец 1">
+      </div>
+      <div class="text" id="text1">Люблю Лину</div>
+    </div>
+    
+    <div class="cucumber-container">
+      <div class="cucumber" id="cucumber2" data-text="Очень сильно">
+        <img src="https://i.pinimg.com/originals/fc/a7/66/fca766643693b021645b276bd61ad09e.png" alt="Огурец 2">
+      </div>
+      <div class="text" id="text2">Очень сильно</div>
+    </div>
+    
+    <div class="cucumber-container">
+      <div class="cucumber" id="cucumber3" data-text="Нет сил">
+        <img src="https://i.pinimg.com/originals/fc/a7/66/fca766643693b021645b276bd61ad09e.png" alt="Огурец 3">
+      </div>
+      <div class="text" id="text3">Нет сил</div>
     </div>
   </div>
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      const cucumber = document.getElementById('cucumber');
+      const cucumbers = [
+        document.getElementById('cucumber1'),
+        document.getElementById('cucumber2'),
+        document.getElementById('cucumber3')
+      ];
       
-      cucumber.addEventListener('click', function() {
-        // Начинаем расти
-        this.classList.add('growing');
-        
-        // Через 2 секунды начинаем исчезать
-        setTimeout(() => {
-          this.classList.add('disappearing');
-        }, 2000);
-        
-        // Полностью удаляем через 3 секунды
-        setTimeout(() => {
-          this.remove();
-          
-          // Создаем новый маленький огурец через 1 секунду
-          setTimeout(() => {
-            const newCucumber = document.createElement('div');
-            newCucumber.className = 'cucumber';
-            newCucumber.id = 'cucumber';
-            newCucumber.innerHTML = '<img src="https://i.pinimg.com/originals/fc/a7/66/fca766643693b021645b276bd61ad09e.png" alt="Огурец">';
-            document.querySelector('.cucumber-container').appendChild(newCucumber);
+      const texts = [
+        document.getElementById('text1'),
+        document.getElementById('text2'),
+        document.getElementById('text3')
+      ];
+      
+      cucumbers.forEach((cucumber, index) => {
+        if (cucumber) {
+          cucumber.addEventListener('click', function() {
+            const textElement = texts[index];
             
-            // Добавляем обработчик клика новому огурцу
+            // Начинаем расти
+            this.classList.add('growing');
+            
+            // Через 2 секунды начинаем исчезать
             setTimeout(() => {
-              document.getElementById('cucumber').addEventListener('click', arguments.callee);
-            }, 100);
-          }, 1000);
-        }, 3000);
+              this.classList.add('disappearing');
+            }, 2000);
+            
+            // Показываем текст через 3 секунды
+            setTimeout(() => {
+              if (textElement) {
+                textElement.classList.add('show');
+              }
+            }, 3000);
+          });
+        }
       });
     });
   </script>
