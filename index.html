@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Огурец Увеличитель</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #66ff66, #33cc33);
+      font-family: Arial, sans-serif;
+    }
+
+    .container {
+      text-align: center;
+      padding: 20px;
+    }
+
+    .cucumber {
+      width: 150px;
+      height: 300px;
+      background: linear-gradient(135deg, #228B22, #32CD32, #228B22);
+      border-radius: 50% 50% 40% 40%;
+      margin: 20px auto;
+      cursor: pointer;
+      transition: transform 0.5s ease;
+      position: relative;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+      border: 3px solid #1a5d1a;
+    }
+
+    /* Полоски на огурце */
+    .cucumber::before {
+      content: '';
+      position: absolute;
+      top: 10%;
+      left: 20%;
+      right: 20%;
+      height: 15%;
+      background: rgba(34, 139, 34, 0.3);
+      border-radius: 50%;
+    }
+
+    .cucumber::after {
+      content: '';
+      position: absolute;
+      top: 30%;
+      left: 15%;
+      right: 15%;
+      height: 12%;
+      background: rgba(34, 139, 34, 0.3);
+      border-radius: 50%;
+    }
+
+    .cucumber.enlarged {
+      transform: scale(3);
+      z-index: 100;
+    }
+
+    h1 {
+      color: white;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+      margin-bottom: 30px;
+    }
+
+    .instructions {
+      color: white;
+      background: rgba(0,0,0,0.2);
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🥒 Огурец Увеличитель 🥒</h1>
+    <div class="cucumber" id="cucumber"></div>
+    <div class="instructions">
+      <p>Кликни на огурец, чтобы увеличить его в 3 раза!</p>
+      <p>Кликни ещё раз, чтобы вернуть размер.</p>
+    </div>
+  </div>
+
+  <script>
+    const cucumber = document.getElementById('cucumber');
+    let isEnlarged = false;
+
+    cucumber.addEventListener('click', function() {
+      if (isEnlarged) {
+        this.classList.remove('enlarged');
+        isEnlarged = false;
+      } else {
+        this.classList.add('enlarged');
+        isEnlarged = true;
+      }
+    });
+
+    // Добавим немного анимации при загрузке
+    setTimeout(() => {
+      cucumber.style.transform = 'scale(1.1)';
+      setTimeout(() => {
+        cucumber.style.transform = 'scale(1)';
+      }, 300);
+    }, 500);
+  </script>
+</body>
+</html>
