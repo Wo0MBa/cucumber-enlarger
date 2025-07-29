@@ -3,33 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Огурцы Рост</title>
+  <title>Растущий огурец</title>
   <style>
     body {
       margin: 0;
       padding: 0;
       min-height: 100vh;
       background: transparent;
-      font-family: Arial, sans-serif;
-      overflow: hidden;
-      position: relative;
       display: flex;
       justify-content: center;
       align-items: center;
+      overflow: hidden;
     }
 
-    .container {
+    .cucumber-container {
+      position: relative;
+      width: 200px;
+      height: 300px;
       display: flex;
-      gap: 50px;
-      padding: 20px;
+      justify-content: center;
+      align-items: flex-end;
     }
 
     .cucumber {
+      position: absolute;
+      bottom: 0;
       width: 60px;
       height: 100px;
       cursor: pointer;
-      transition: all 1.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-      filter: drop-shadow(0 3px 6px rgba(0,0,0,0.2));
+      transition: all 2s cubic-bezier(0.34, 1.56, 0.64, 1);
       transform-origin: bottom center;
     }
 
@@ -42,69 +44,52 @@
     .cucumber.growing {
       width: 180px;
       height: 300px;
-      z-index: 100;
-      filter: drop-shadow(0 15px 30px rgba(0,0,0,0.3));
     }
 
-    .title {
-      position: absolute;
-      top: 20px;
-      left: 0;
-      right: 0;
-      text-align: center;
-      color: #228B22;
-      text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-      font-size: 24px;
-    }
-
-    .instructions {
-      position: absolute;
-      bottom: 20px;
-      left: 0;
-      right: 0;
-      text-align: center;
-      color: #228B22;
-      font-size: 14px;
-      background: rgba(255,255,255,0.7);
-      padding: 8px;
-      border-radius: 10px;
-      margin: 0 20px;
+    .cucumber.disappearing {
+      opacity: 0;
+      transform: scale(0.1);
     }
   </style>
 </head>
 <body>
-  <div class="title">🌱 Кликни на огурец, чтобы он вырос! 🌱</div>
-  
-  <div class="container">
-    <div class="cucumber" data-id="1">
-      <img src="https://i.pinimg.com/originals/fc/a7/66/fca766643693b021645b276bd61ad09e.png" alt="Огурец 1">
-    </div>
-    <div class="cucumber" data-id="2">
-      <img src="https://i.pinimg.com/originals/fc/a7/66/fca766643693b021645b276bd61ad09e.png" alt="Огурец 2">
-    </div>
-    <div class="cucumber" data-id="3">
-      <img src="https://i.pinimg.com/originals/fc/a7/66/fca766643693b021645b276bd61ad09e.png" alt="Огурец 3">
+  <div class="cucumber-container">
+    <div class="cucumber" id="cucumber">
+      <img src="https://i.pinimg.com/originals/fc/a7/66/fca766643693b021645b276bd61ad09e.png" alt="Огурец">
     </div>
   </div>
-  
-  <div class="instructions">Кликни на любой огурец, чтобы он плавно вырос в 3 раза!</div>
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      const cucumbers = document.querySelectorAll('.cucumber');
+      const cucumber = document.getElementById('cucumber');
       
-      cucumbers.forEach(cucumber => {
-        cucumber.addEventListener('click', function() {
-          // Убираем класс роста у всех огурцов
-          cucumbers.forEach(c => {
-            if (c !== this) {
-              c.classList.remove('growing');
-            }
-          });
+      cucumber.addEventListener('click', function() {
+        // Начинаем расти
+        this.classList.add('growing');
+        
+        // Через 2 секунды начинаем исчезать
+        setTimeout(() => {
+          this.classList.add('disappearing');
+        }, 2000);
+        
+        // Полностью удаляем через 3 секунды
+        setTimeout(() => {
+          this.remove();
           
-          // Переключаем рост у кликнутого огурца
-          this.classList.toggle('growing');
-        });
+          // Создаем новый маленький огурец через 1 секунду
+          setTimeout(() => {
+            const newCucumber = document.createElement('div');
+            newCucumber.className = 'cucumber';
+            newCucumber.id = 'cucumber';
+            newCucumber.innerHTML = '<img src="https://i.pinimg.com/originals/fc/a7/66/fca766643693b021645b276bd61ad09e.png" alt="Огурец">';
+            document.querySelector('.cucumber-container').appendChild(newCucumber);
+            
+            // Добавляем обработчик клика новому огурцу
+            setTimeout(() => {
+              document.getElementById('cucumber').addEventListener('click', arguments.callee);
+            }, 100);
+          }, 1000);
+        }, 3000);
       });
     });
   </script>
