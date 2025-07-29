@@ -3,92 +3,174 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Огурец Увеличитель</title>
+  <title>Огурец на грядке</title>
   <style>
     body {
       margin: 0;
       padding: 0;
+      min-height: 100vh;
+      background: linear-gradient(to bottom, #87CEEB 0%, #87CEEB 30%, #434343 30%, #434343 35%, #8B4513 35%, #8B4513 100%);
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .garden {
+      position: relative;
+      width: 100%;
+      height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: 100vh;
-      background: #66bb66;
-      font-family: Arial, sans-serif;
-      overflow: hidden;
     }
 
-    .container {
-      text-align: center;
-      padding: 20px;
+    /* Грядка */
+    .bed {
+      position: absolute;
+      bottom: 20%;
+      width: 80%;
+      height: 120px;
+      background: linear-gradient(to bottom, #8B4513, #654321, #8B4513);
+      border-radius: 10px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+      border: 3px solid #5d2906;
+    }
+
+    /* Земля в грядке */
+    .soil {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      bottom: 10px;
+      background: linear-gradient(to bottom, #654321, #3d2914);
+      border-radius: 5px;
+    }
+
+    /* Линии на грядке */
+    .lines {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 40px,
+        rgba(93, 41, 6, 0.3) 40px,
+        rgba(93, 41, 6, 0.3) 42px
+      );
+      border-radius: 10px;
     }
 
     .cucumber {
-      width: 100px;
-      height: 200px;
-      background: linear-gradient(45deg, #228B22, #32CD32, #228B22);
-      border-radius: 50% 50% 40% 40%;
-      margin: 20px auto;
-      cursor: pointer;
-      transition: all 0.5s ease;
-      position: relative;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
-      border: 2px solid #1a5d1a;
-    }
-
-    /* Полоски на огурце */
-    .cucumber::before,
-    .cucumber::after {
-      content: '';
       position: absolute;
-      background: rgba(34, 139, 34, 0.3);
-      border-radius: 50%;
-      left: 15%;
-      right: 15%;
+      bottom: calc(20% + 100px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 180px;
+      cursor: pointer;
+      transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      z-index: 10;
+      filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3));
     }
 
-    .cucumber::before {
-      top: 20%;
-      height: 12%;
-    }
-
-    .cucumber::after {
-      top: 45%;
-      height: 10%;
-    }
-
-    .cucumber:hover {
-      transform: scale(1.1);
+    .cucumber img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
 
     .cucumber.enlarged {
-      transform: scale(3);
+      transform: translateX(-50%) scale(3);
+      z-index: 100;
     }
 
-    h1 {
+    /* Солнце */
+    .sun {
+      position: absolute;
+      top: 50px;
+      right: 100px;
+      width: 80px;
+      height: 80px;
+      background: radial-gradient(circle, #FFD700, #FFA500);
+      border-radius: 50%;
+      box-shadow: 0 0 40px #FFA500, 0 0 80px #FF8C00;
+    }
+
+    /* Облака */
+    .cloud {
+      position: absolute;
+      background: white;
+      border-radius: 50%;
+      filter: blur(5px);
+    }
+
+    .cloud:nth-child(1) {
+      top: 80px;
+      left: 100px;
+      width: 60px;
+      height: 30px;
+    }
+
+    .cloud:nth-child(2) {
+      top: 120px;
+      left: 200px;
+      width: 80px;
+      height: 40px;
+    }
+
+    .title {
+      position: absolute;
+      top: 20px;
+      left: 0;
+      right: 0;
+      text-align: center;
       color: white;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-      margin-bottom: 30px;
-      font-size: 24px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+      font-size: 28px;
     }
 
     .instructions {
+      position: absolute;
+      bottom: 20px;
+      left: 0;
+      right: 0;
+      text-align: center;
       color: white;
-      background: rgba(0,0,0,0.2);
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+      font-size: 16px;
+      background: rgba(0,0,0,0.3);
       padding: 10px;
-      border-radius: 8px;
-      margin-top: 20px;
-      font-size: 14px;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>🥒 Огурец Увеличитель 🥒</h1>
-    <div class="cucumber" id="cucumber"></div>
-    <div class="instructions">
-      <p>Кликни на огурец - увеличится в 3 раза!</p>
+  <div class="title">🌱 Огород с огурцами 🌱</div>
+  
+  <div class="garden">
+    <!-- Солнце -->
+    <div class="sun"></div>
+    
+    <!-- Облака -->
+    <div class="cloud"></div>
+    <div class="cloud"></div>
+    
+    <!-- Грядка -->
+    <div class="bed">
+      <div class="soil"></div>
+      <div class="lines"></div>
+    </div>
+    
+    <!-- Твой огурец -->
+    <div class="cucumber" id="cucumber">
+      <img src="https://i.pinimg.com/originals/fc/a7/66/fca766643693b021645b276bd61ad09e.png" alt="Огурец">
     </div>
   </div>
+  
+  <div class="instructions">Кликни на огурец, чтобы он увеличился в 3 раза!</div>
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
