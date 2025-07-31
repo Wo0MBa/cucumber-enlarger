@@ -83,8 +83,8 @@
 
     const containers = [];
     const count = 8;
-    const startY = -100;
-    const endY = 40;
+    const startTop = -100;  // За верхней границей (в процентах от высоты)
+    const endTop = 40;      // Конечная высота — 40%
     const totalWidth = 70;
     const margin = 15;
     const step = totalWidth / (count - 1);
@@ -92,65 +92,66 @@
     document.addEventListener('DOMContentLoaded', function () {
       const body = document.body;
 
-      // Создаём все 8 картинок
       for (let i = 0; i < count; i++) {
         const left = margin + step * i;
 
         const container = document.createElement('div');
         container.className = 'cucumber-container';
         container.style.left = `${left}%`;
-        container.style.top = `${startY}px`;
+        container.style.top = `${startTop}%`;  // Начинаем за экраном
         body.appendChild(container);
 
         const cucumber = document.createElement('div');
         cucumber.className = 'cucumber';
-        cucumber.dataset.index = i; // Сохраняем индекс
+        cucumber.dataset.index = i;  // Надёжно сохраняем индекс
         cucumber.innerHTML = `<img src="https://i.pinimg.com/originals/fc/a7/66/fca766643693b021645b276bd61ad09e.png" alt="Огурец">`;
         container.appendChild(cucumber);
 
-        // Для остановки анимации
         cucumber.moveInterval = null;
 
         containers.push({
           element: container,
           cucumber: cucumber,
-          velocity: { x: (Math.random() - 0.5) * 8, y: (Math.random() - 0.5) * 8 }
+          velocity: {
+            x: (Math.random() - 0.5) * 8,
+            y: (Math.random() - 0.5) * 8
+          }
         });
       }
 
-      // Запускаем падение всех через 500 мс
+      // Запускаем падение всех через 500мс
       setTimeout(startFalling, 500);
     });
 
     function startFalling() {
-      const duration = 1800;
+      const duration = 1800;  // 1.8 секунды
       const interval = 30;
       const steps = duration / interval;
       let currentStep = 0;
 
       const timer = setInterval(() => {
         currentStep++;
-        const progress = currentStep / steps;
+        const progress = Math.min(currentStep / steps, 1);
 
         containers.forEach(({ element }) => {
-          // Интерполяция: от startY (px) до endY (%)
-          const viewportHeight = window.innerHeight;
-          const endYPx = (endY / 100) * viewportHeight;
-          const currentY = startY + (endYPx - startY) * progress;
-
-          if (progress < 1) {
-            element.style.top = `${currentY}px`;
-          } else {
-            clearInterval(timer);
-            element.style.top = `${endY}%`;
-            startAllMovement(); // Запускаем движение
-          }
+          // Плавно меняем top от -100% до 40%
+          const currentTop = startTop + (endTop - startTop) * progress;
+          element.style.top = `${currentTop}%`;
         });
+
+        if (progress >= 1) {
+          clearInterval(timer);
+          startAllMovement();  // Только после полного падения
+        }
       }, interval);
     }
 
     function startAllMovement() {
       containers.forEach(({ element, cucumber, velocity }) => {
+        // Убедимся, что top в процентах
+        element.style.top = `${endTop}%`;
+
+        // Запускаем движение
         cucumber.moveInterval = setInterval(() => {
           let left = parseFloat(element.style.left) || 0;
           let top = parseFloat(element.style.top) || 0;
@@ -158,7 +159,7 @@
           left += velocity.x / 10;
           top += velocity.y / 10;
 
-          // Отталкивание
+          // Отталкивание от других
           containers.forEach(other => {
             if (other.element === element || !document.body.contains(other.element)) return;
 
@@ -176,7 +177,7 @@
             }
           });
 
-          // Границы
+          // Границы экрана
           const minX = 10, maxX = 90;
           const minY = 20, maxY = 70;
 
@@ -192,6 +193,7 @@
           element.style.left = `${left.toFixed(1)}%`;
           element.style.top = `${top.toFixed(1)}%`;
 
+          // Затухание скорости
           velocity.x *= 0.98;
           velocity.y *= 0.98;
         }, 60);
@@ -200,22 +202,32 @@
 
     // Обработчик клика
     document.body.addEventListener('click', function (e) {
-      const cucumber = e.target.closest('.cucumber');
-      if (!cucumber || cucumber.classList.contains('clicked')) return;
+      const target = e.target.closest('.cucumber');
+      if (!target) return;
+
+      const cucumber = target;
+      if (cucumber.classList.contains('clicked')) return;
 
       const index = parseInt(cucumber.dataset.index);
+      if (isNaN(index) || index < 0 || index >= words.length) return;
+
       cucumber.classList.add('clicked');
 
+      // Останавливаем движение
       if (cucumber.moveInterval) {
         clearInterval(cucumber.moveInterval);
+        cucumber.moveInterval = null;
       }
 
+      // Увеличиваем
       cucumber.classList.add('growing');
 
+      // Исчезает через 1 сек
       setTimeout(() => {
         cucumber.classList.add('disappearing');
       }, 1000);
 
+      // Через 1.8 сек — удаляем и показываем текст
       setTimeout(() => {
         cucumber.remove();
         const container = cucumber.parentElement;
