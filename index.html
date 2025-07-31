@@ -9,7 +9,7 @@
       margin: 0;
       padding: 0;
       min-height: 100vh;
-      background: transparent; /* Прозрачный фон страницы */
+      background: transparent;
       overflow: hidden;
       font-family: 'Arial', sans-serif;
     }
@@ -65,24 +65,22 @@
       transition: all 0.8s ease-out !important;
     }
 
-    /* Окошко с текстом */
     .text-box {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: #FFA500; /* Оранжевый фон (Orange) */
+      background: #FFA500; /* Оранжевый фон */
       color: #000; /* Чёрный текст */
       font-size: 24px;
       font-weight: bold;
       padding: 12px 20px;
-      border: 2px solid #fff; /* Белая рамка */
+      border: 2px solid #fff;
       border-radius: 8px;
       white-space: nowrap;
       box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
       pointer-events: none;
       text-align: center;
-      min-width: 100px;
     }
   </style>
 </head>
@@ -92,6 +90,9 @@
       "Твори", "Верь", "Мечтай", "Действуй",
       "Лети", "Сияй", "Измени", "Побеждай"
     ];
+
+    // Храним все контейнеры и их данные
+    const containers = [];
 
     document.addEventListener('DOMContentLoaded', function () {
       const body = document.body;
@@ -110,7 +111,13 @@
         cucumber.innerHTML = `<img src="https://i.pinimg.com/originals/fc/a7/66/fca766643693b021645b276bd61ad09e.png" alt="Огурец">`;
         container.appendChild(cucumber);
 
-        // Случайное направление появления
+        // Направление движения (dx/dy)
+        const velocity = {
+          x: (Math.random() - 0.5) * 8,
+          y: (Math.random() - 0.5) * 8
+        };
+
+        // Случайное появление с края
         const side = Math.floor(Math.random() * 4);
         let startX, startY, endX, endY;
 
@@ -144,36 +151,34 @@
         container.style.left = `${startX}%`;
         container.style.top = `${startY}%`;
 
-        // Плавное появление
         container.style.transition = 'left 1.8s ease-out, top 1.8s ease-out';
         setTimeout(() => {
           container.style.left = `${endX}%`;
           container.style.top = `${endY}%`;
         }, 50);
 
+        // Добавляем в общий массив
+        const containerData = { element: container, velocity };
+        containers.push(containerData);
+
         let moveInterval;
 
-        // Запускаем движение после появления
         setTimeout(() => {
-          moveInterval = startModerateRandomMovement(container);
+          moveInterval = startSmartMovement(containerData);
         }, 2000);
 
         cucumber.addEventListener('click', function () {
           if (cucumber.classList.contains('clicked')) return;
           cucumber.classList.add('clicked');
 
-          // Останавливаем движение
           if (moveInterval) clearInterval(moveInterval);
 
-          // Увеличиваем
           cucumber.classList.add('growing');
 
-          // Исчезает через 1 секунду
           setTimeout(() => {
             cucumber.classList.add('disappearing');
           }, 1000);
 
-          // Текст в окошке появляется сразу после (через 1.8 сек)
           setTimeout(() => {
             cucumber.remove();
 
@@ -181,28 +186,59 @@
             textBox.className = 'text-box';
             textBox.textContent = words[index];
             container.appendChild(textBox);
+
+            // Удаляем контейнер из массива (чтобы не мешал другим)
+            const idx = containers.findIndex(c => c.element === container);
+            if (idx !== -1) containers.splice(idx, 1);
           }, 1800);
         });
       }
 
-      // Умеренное движение — чуть быстрее, но контролируемо
-      function startModerateRandomMovement(element) {
+      function startSmartMovement(containerData) {
         return setInterval(() => {
-          const dx = (Math.random() - 0.5) * 8;
-          const dy = (Math.random() - 0.5) * 8;
+          const { element, velocity } = containerData;
+          const rect = element.getBoundingClientRect();
+          const centerX = rect.left + rect.width / 2;
+          const centerY = rect.top + rect.height / 2;
 
-          const currentLeft = parseFloat(element.style.left) || 0;
-          const currentTop = parseFloat(element.style.top) || 0;
+          // Проверяем расстояние до других контейнеров
+          containers.forEach(other => {
+            if (other.element === element) return;
 
-          let newLeft = currentLeft + dx;
-          let newTop = currentTop + dy;
+            const otherRect = other.element.getBoundingClientRect();
+            const otherCenterX = otherRect.left + otherRect.width / 2;
+            const otherCenterY = otherRect.top + otherRect.height / 2;
 
-          newLeft = Math.max(5, Math.min(newLeft, 95)) + '%';
-          newTop = Math.max(5, Math.min(newTop, 85)) + '%';
+            const dx = otherCenterX - centerX;
+            const dy = otherCenterY - centerY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
 
-          element.style.left = newLeft;
-          element.style.top = newTop;
-        }, 400);
+            // Если слишком близко — "отталкиваемся"
+            if (distance < 150) { // 150px — минимальное расстояние
+              const force = 0.8;
+              velocity.x -= dx / distance * force;
+              velocity.y -= dy / distance * force;
+            }
+          });
+
+          // Применяем движение
+          let left = parseFloat(element.style.left) || 0;
+          let top = parseFloat(element.style.top) || 0;
+
+          left += velocity.x / 10; // плавное движение
+          top += velocity.y / 10;
+
+          // Лёгкая коррекция скорости — чтобы не улетели слишком быстро
+          velocity.x *= 0.98;
+          velocity.y *= 0.98;
+
+          // Границы экрана
+          left = Math.max(5, Math.min(left, 95));
+          top = Math.max(5, Math.min(top, 85));
+
+          element.style.left = `${left}%`;
+          element.style.top = `${top}%`;
+        }, 60); // Частое обновление для плавности
       }
     });
   </script>
