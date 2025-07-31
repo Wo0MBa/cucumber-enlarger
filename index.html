@@ -22,11 +22,9 @@
       justify-content: center;
       align-items: flex-end;
       pointer-events: none;
-      /* Аппаратное ускорение */
+      /* Гарантируем рендеринг через GPU */
       transform: translateZ(0);
-      will-change: top, left;
-      /* Z-индекс по порядку появления */
-      z-index: 1;
+      will-change: top;
     }
 
     .cucumber {
@@ -74,7 +72,6 @@
       box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
       pointer-events: none;
       text-align: center;
-      z-index: 2;
     }
   </style>
 </head>
@@ -86,27 +83,26 @@
     ];
 
     const containers = [];
-    const targetY = 40;
+    const count = 8;
+    const startY = -100;  // Начинаем за экраном
+    const endY = 40;      // Приземляемся на 40% от верха
+
+    // Распределяем равномерно по ширине (с отступами)
+    const totalWidth = 70;  // Занимаем 70% ширины
+    const margin = 15;      // Отступы по краям
+    const step = totalWidth / (count - 1);  // Шаг между картинками
 
     document.addEventListener('DOMContentLoaded', function () {
       const body = document.body;
-      const delay = 1200; // Увеличена задержка между падениями
 
-      for (let i = 0; i < 8; i++) {
-        // Каждая картинка появляется только после полного завершения предыдущей анимации падения
-        setTimeout(() => {
-          createCucumber(i);
-        }, delay * i);
-      }
-
-      function createCucumber(index) {
-        const startX = Math.random() * 60 + 20;
+      // Создаём все контейнеры сразу
+      for (let i = 0; i < count; i++) {
+        const left = margin + step * i;  // 15%, 23.75%, 32.5% ... 85%
 
         const container = document.createElement('div');
         container.className = 'cucumber-container';
-        container.style.left = `${startX}%`;
-        container.style.top = '-100px';
-        container.style.zIndex = 10 + index; // Чем позже — тем выше z-index, но не влияет на "вспышки"
+        container.style.left = `${left}%`;
+        container.style.top = `${startY}px`;  // Начинаем выше экрана
         body.appendChild(container);
 
         const cucumber = document.createElement('div');
@@ -116,78 +112,59 @@
 
         cucumber.moveInterval = null;
 
-        // Физика падения
-        let fallSpeed = 0;
-        const gravity = 0.5;
-        const maxFallSpeed = 0.9;
-
-        // Устанавливаем, что анимация падения длится ~1.2–1.5 сек
-        const fallInterval = setInterval(() => {
-          let top = parseFloat(container.style.top) || 0;
-          fallSpeed += gravity;
-          if (fallSpeed > maxFallSpeed) fallSpeed = maxFallSpeed;
-
-          top += fallSpeed;
-
-          // Округляем, чтобы избежать дробных скачков
-          if (top >= targetY) {
-            top = targetY;
-            clearInterval(fallInterval);
-            container.style.top = `${top}%`;
-
-            // Только после полного приземления — начинаем движение
-            startMovement(container, cucumber);
-          } else {
-            container.style.top = `${top.toFixed(1)}%`;
-          }
-        }, 30);
-
-        cucumber.addEventListener('click', function () {
-          if (cucumber.classList.contains('clicked')) return;
-          cucumber.classList.add('clicked');
-
-          if (cucumber.moveInterval) {
-            clearInterval(cucumber.moveInterval);
-          }
-
-          cucumber.classList.add('growing');
-
-          setTimeout(() => {
-            cucumber.classList.add('disappearing');
-          }, 1000);
-
-          setTimeout(() => {
-            cucumber.remove();
-
-            const textBox = document.createElement('div');
-            textBox.className = 'text-box';
-            textBox.textContent = words[index];
-            container.appendChild(textBox);
-
-            const idx = containers.findIndex(c => c.element === container);
-            if (idx !== -1) containers.splice(idx, 1);
-          }, 1800);
+        // Сохраняем данные
+        containers.push({
+          element: container,
+          cucumber: cucumber,
+          velocity: { x: (Math.random() - 0.5) * 8, y: (Math.random() - 0.5) * 8 }
         });
       }
 
-      function startMovement(container, cucumber) {
-        const velocity = {
-          x: (Math.random() - 0.5) * 8,
-          y: (Math.random() - 0.5) * 8
-        };
+      // Запускаем падение ВСЕХ одновременно через 500мс
+      setTimeout(startFalling, 500);
+    });
 
+    function startFalling() {
+      const duration = 1800;  // 1.8 секунды падения
+      const interval = 30;
+      const steps = duration / interval;
+      let currentStep = 0;
+
+      const timer = setInterval(() => {
+        currentStep++;
+
+        containers.forEach(({ element }) => {
+          const progress = currentStep / steps;
+          const currentY = startY + (endY - startY / 100 * window.innerHeight / 10) * progress;
+
+          // Плавное движение вниз
+          if (progress < 1) {
+            element.style.top = `${currentY}px`;
+          } else {
+            clearInterval(timer);
+            element.style.top = `${endY}%`;
+            // После падения — запускаем движение
+            startMovementAll();
+          }
+        });
+      }, interval);
+    }
+
+    function startMovementAll() {
+      containers.forEach(({ element, cucumber, velocity }) => {
+        // Уже приземлились — теперь двигаемся
         cucumber.moveInterval = setInterval(() => {
-          let left = parseFloat(container.style.left) || 0;
-          let top = parseFloat(container.style.top) || 0;
+          let left = parseFloat(element.style.left) || 0;
+          let top = parseFloat(element.style.top) || 0;
 
           left += velocity.x / 10;
           top += velocity.y / 10;
 
           // Отталкивание
           containers.forEach(other => {
-            if (other.element === container || !document.body.contains(other.element)) return;
+            if (other.element === element || !document.body.contains(other.element)) return;
 
-            const rect1 = container.getBoundingClientRect();
+            const rect1 = element.getBoundingClientRect();
             const rect2 = other.element.getBoundingClientRect();
 
             const dx = (rect2.left + rect2.width / 2) - (rect1.left + rect1.width / 2);
@@ -202,8 +179,8 @@
           });
 
           // Границы
-          const minX = 15, maxX = 85;
-          const minY = 20, maxY = 70;
+          const minX = 10, maxX = 90;
+          const minY = 30, maxY = 70;
 
           if (left <= minX || left >= maxX) {
             velocity.x *= -1;
@@ -214,15 +191,46 @@
             top = top < minY ? minY : maxY;
           }
 
-          container.style.left = `${left.toFixed(1)}%`;
-          container.style.top = `${top.toFixed(1)}%`;
+          element.style.left = `${left.toFixed(1)}%`;
+          element.style.top = `${top.toFixed(1)}%`;
 
           velocity.x *= 0.98;
           velocity.y *= 0.98;
         }, 60);
+      });
+    }
 
-        containers.push({ element: container, velocity });
+    // Клик на любую картинку
+    document.body.addEventListener('click', function (e) {
+      const cucumber = e.target.closest('.cucumber');
+      if (!cucumber) return;
+
+      if (cucumber.classList.contains('clicked')) return;
+      cucumber.classList.add('clicked');
+
+      if (cucumber.moveInterval) {
+        clearInterval(cucumber.moveInterval);
       }
+
+      cucumber.classList.add('growing');
+
+      setTimeout(() => {
+        cucumber.classList.add('disappearing');
+      }, 1000);
+
+      setTimeout(() => {
+        cucumber.remove();
+        const container = cucumber.parentElement;
+        if (!container) return;
+
+        const index = Array.from(document.querySelectorAll('.cucumber-container')).indexOf(container);
+        if (index < 0 || index >= words.length) return;
+
+        const textBox = document.createElement('div');
+        textBox.className = 'text-box';
+        textBox.textContent = words[index];
+        container.appendChild(textBox);
+      }, 1800);
     });
   </script>
 </body>
