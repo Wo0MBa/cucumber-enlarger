@@ -21,7 +21,7 @@
       display: flex;
       justify-content: center;
       align-items: flex-end;
-      pointer-events: none; /* Не блокирует клики */
+      pointer-events: none;
     }
 
     .cucumber {
@@ -32,7 +32,7 @@
       cursor: pointer;
       transition: all 2s cubic-bezier(0.34, 1.56, 0.64, 1);
       transform-origin: bottom center;
-      pointer-events: auto; /* Только картинка кликабельна */
+      pointer-events: auto;
     }
 
     .cucumber img {
@@ -57,12 +57,12 @@
     }
 
     .falling {
-      animation: fall 1.8s ease-out forwards; /* Замедлено на 20%: было 1.5s → стало 1.8s */
+      animation: fall 1.8s ease-out forwards;
     }
 
     .growing {
-      width: 144px;   /* Уменьшено на 20% */
-      height: 240px;  /* Пропорционально */
+      width: 144px;
+      height: 240px;
     }
 
     .disappearing {
@@ -76,8 +76,8 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: #FFA500; /* Оранжевый фон */
-      color: #000; /* Чёрный текст */
+      background: #FFA500;
+      color: #000;
       font-size: 24px;
       font-weight: bold;
       padding: 12px 20px;
@@ -85,9 +85,8 @@
       border-radius: 8px;
       white-space: nowrap;
       box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
-      pointer-events: none; /* Не мешает кликать */
+      pointer-events: none;
       text-align: center;
-      z-index: 1;
     }
   </style>
 </head>
@@ -98,7 +97,7 @@
       "Лети", "Сияй", "Измени", "Побеждай"
     ];
 
-    const containers = []; // Все активные контейнеры
+    const containers = [];
 
     document.addEventListener('DOMContentLoaded', function () {
       const body = document.body;
@@ -108,36 +107,47 @@
       }
 
       function createCucumber(index) {
+        // Случайная позиция по X — где упадёт
+        const startX = Math.random() * 60 + 20; // 20% – 80%
+
         const container = document.createElement('div');
         container.className = 'cucumber-container';
-
-        // Начальная позиция — за верхней границей
-        container.style.left = Math.random() * 60 + 20 + '%'; // 20%–80%
-        container.style.top = '-150px'; // Немного выше
+        container.style.left = `${startX}%`;
+        container.style.top = '-150px'; // Начинаем за экраном
         body.appendChild(container);
 
         const cucumber = document.createElement('div');
-        cucumber.className = 'cucumber falling'; // Анимация падения (1.8s)
+        cucumber.className = 'cucumber falling'; // Анимация падения
         cucumber.innerHTML = `<img src="https://i.pinimg.com/originals/fc/a7/66/fca766643693b021645b276bd61ad09e.png" alt="Огурец">`;
         container.appendChild(cucumber);
 
-        // Начальная скорость
+        // Начальная скорость для движения после падения
         const velocity = {
           x: (Math.random() - 0.5) * 8,
           y: (Math.random() - 0.5) * 8
         };
 
-        // Добавляем в список
         const containerData = { element: container, velocity };
         containers.push(containerData);
 
         let moveInterval;
 
-        // Запускаем движение после падения
+        // Запускаем движение сразу ПОСЛЕ окончания падения
         setTimeout(() => {
-          container.style.top = '25%'; // Фиксируем начальное положение в видимой зоне
-          moveInterval = startSmartMovement(containerData);
-        }, 1800); // Соответствует длительности анимации (1.8s)
+          // К этому моменту анимация закончилась, элемент "приземлился"
+          // Получаем реальную позицию через getBoundingClientRect()
+          const rect = container.getBoundingClientRect();
+          const left = rect.left + window.scrollX;
+          const top = rect.top + window.scrollY;
+
+          // Устанавливаем координаты в пикселях для точного контроля
+          container.style.position = 'fixed';
+          container.style.left = `${left}px`;
+          container.style.top = `${top}px`;
+
+          // Теперь запускаем движение
+          moveInterval = startSmoothMovement(containerData);
+        }, 1800); // = длительности анимации падения
 
         cucumber.addEventListener('click', function () {
           if (cucumber.classList.contains('clicked')) return;
@@ -159,25 +169,24 @@
             textBox.textContent = words[index];
             container.appendChild(textBox);
 
-            // Удаляем из системы отслеживания
             const idx = containers.findIndex(c => c.element === container);
             if (idx !== -1) containers.splice(idx, 1);
           }, 1800);
         });
       }
 
-      function startSmartMovement(containerData) {
+      function startSmoothMovement(containerData) {
         return setInterval(() => {
           const { element, velocity } = containerData;
 
-          let left = parseFloat(element.style.left) || 0;
-          let top = parseFloat(element.style.top) || 0;
+          let left = parseFloat(element.style.left);
+          let top = parseFloat(element.style.top);
 
           // Применяем движение
-          left += velocity.x / 10;
-          top += velocity.y / 10;
+          left += velocity.x;
+          top += velocity.y;
 
-          // Проверка на столкновение
+          // Проверка на столкновения с другими
           containers.forEach(other => {
             if (other.element === element || !document.body.contains(other.element)) return;
 
@@ -195,9 +204,11 @@
             }
           });
 
-          // Ограничение движения — центр экрана
-          const minX = 20, maxX = 80;
-          const minY = 20, maxY = 70;
+          // Ограничение по краям экрана (в пикселях)
+          const minX = window.innerWidth * 0.2;
+          const maxX = window.innerWidth * 0.8;
+          const minY = window.innerHeight * 0.2;
+          const maxY = window.innerHeight * 0.7;
 
           if (left <= minX || left >= maxX) {
             velocity.x *= -1;
@@ -208,8 +219,8 @@
             top = top < minY ? minY : maxY;
           }
 
-          element.style.left = `${left}%`;
-          element.style.top = `${top}%`;
+          element.style.left = `${left}px`;
+          element.style.top = `${top}px`;
 
           // Затухание скорости
           velocity.x *= 0.98;
