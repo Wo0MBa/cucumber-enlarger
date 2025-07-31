@@ -5,74 +5,74 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Растущие огурцы</title>
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-      min-height: 100vh;
-      background: transparent;
-      overflow: hidden;
-      font-family: 'Arial', sans-serif;
-    }
+  body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    background: transparent;
+    overflow: hidden;
+    font-family: 'Arial', sans-serif;
+  }
 
-    .cucumber-container {
-      position: absolute;
-      width: 150px;
-      height: 300px;
-      display: flex;
-      justify-content: center;
-      align-items: flex-end;
-      pointer-events: none;
-      transform: translateZ(0);
-      will-change: top, left;
-    }
+  .cucumber-container {
+    position: absolute;
+    width: 150px;
+    height: 300px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    pointer-events: none;
+    transform: translateZ(0);
+    will-change: top, left;
+  }
 
-    .cucumber {
-      position: absolute;
-      bottom: 0;
-      width: 60px;
-      height: 100px;
-      cursor: pointer;
-      transition: all 2s cubic-bezier(0.34, 1.56, 0.64, 1);
-      transform-origin: bottom center;
-      pointer-events: auto;
-    }
+  .cucumber {
+    position: absolute;
+    bottom: 0;
+    width: 60px;
+    height: 100px;
+    cursor: pointer;
+    transition: all 2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform-origin: bottom center;
+    pointer-events: auto;
+  }
 
-    .cucumber img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      image-rendering: crisp-edges;
-    }
+  .cucumber img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    image-rendering: crisp-edges;
+  }
 
-    .growing {
-      width: 144px;
-      height: 240px;
-    }
+  .growing {
+    width: 144px;
+    height: 240px;
+  }
 
-    .disappearing {
-      opacity: 0 !important;
-      transform: scale(0.1) !important;
-      transition: all 0.8s ease-out !important;
-    }
+  .disappearing {
+    opacity: 0 !important;
+    transform: scale(0.1) !important;
+    transition: all 0.8s ease-out !important;
+  }
 
-    .text-box {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: #FFA500;
-      color: #000;
-      font-size: 24px;
-      font-weight: bold;
-      padding: 12px 20px;
-      border: 2px solid #fff;
-      border-radius: 8px;
-      white-space: nowrap;
-      box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
-      pointer-events: none;
-      text-align: center;
-    }
-  </style>
+  .text-box {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #FFA500;
+    color: #000;
+    font-size: 24px;
+    font-weight: bold;
+    padding: 12px 20px;
+    border: 2px solid #fff;
+    border-radius: 8px;
+    white-space: nowrap;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+    pointer-events: none;
+    text-align: center;
+  }
+</style>
 </head>
 <body>
   <script>
@@ -109,10 +109,10 @@
 
         cucumber.moveInterval = null;
 
-        // Начальная скорость: в 2 раза меньше (было *4 → теперь *2)
+        // Очень маленькая начальная скорость
         const velocity = {
-          x: (Math.random() - 0.5) * 2,
-          y: (Math.random() - 0.5) * 2
+          x: (Math.random() - 0.5) * 0.8,
+          y: (Math.random() - 0.5) * 0.8
         };
 
         containers.push({ element: container, cucumber, velocity });
@@ -147,15 +147,16 @@
       containers.forEach(({ element, cucumber, velocity }) => {
         element.style.top = `${endTop}%`;
 
+        // Замедляем обновление — плавнее, меньше "дрожи"
         cucumber.moveInterval = setInterval(() => {
           let left = parseFloat(element.style.left) || 0;
           let top = parseFloat(element.style.top) || 0;
 
-          // Двигаемся ещё в 2 раза медленнее
-          left += velocity.x / 2;
-          top += velocity.y / 2;
+          // Очень медленное движение
+          left += velocity.x;
+          top += velocity.y;
 
-          // Отталкивание от других
+          // Очень слабое отталкивание — чтобы не ускорялись
           containers.forEach(other => {
             if (other.element === element || !document.body.contains(other.element)) return;
 
@@ -166,13 +167,13 @@
             const dist = Math.sqrt(dx*dx + dy*dy);
 
             if (dist < 150) {
-              const force = 1.0;
+              const force = 0.3; // Очень слабое отталкивание
               velocity.x -= dx / dist * force;
               velocity.y -= dy / dist * force;
             }
           });
 
-          // Границы экрана
+          // Границы — отскок, но мягко
           const minX = 10, maxX = 90;
           const minY = 20, maxY = 70;
 
@@ -185,15 +186,15 @@
             top = top < minY ? minY : maxY;
           }
 
-          element.style.left = `${left.toFixed(1)}%`;
-          element.style.top = `${top.toFixed(1)}%`;
+          element.style.left = `${left.toFixed(2)}%`;
+          element.style.top = `${top.toFixed(2)}%`;
 
-          // 🔥 Никакого затухания — скорость НЕ меняется
-        }, 60);
+          // 🔥 Никакого затухания — но и нет ускорения
+        }, 100); // Обновляем реже → плавнее
       });
     }
 
-    // Обработчик клика
+    // Клик
     document.body.addEventListener('click', function (e) {
       const cucumber = e.target.closest('.cucumber');
       if (!cucumber || cucumber.classList.contains('clicked')) return;
