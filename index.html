@@ -79,7 +79,7 @@
     ];
 
     const containers = [];
-    const targetY = 40; // Центр экрана (в процентах)
+    const targetY = 40; // Центр экрана по вертикали
 
     document.addEventListener('DOMContentLoaded', function () {
       const body = document.body;
@@ -107,33 +107,37 @@
         const gravity = 0.8;
         const maxFallSpeed = 1.2;
 
-        // Начинаем падать
-        let fallInterval = setInterval(() => {
+        // Для доступа к moveInterval изнутри клика
+        cucumber.moveInterval = null;
+
+        // Анимация падения через setInterval
+        const fallInterval = setInterval(() => {
           let top = parseFloat(container.style.top) || 0;
           fallSpeed += gravity;
           if (fallSpeed > maxFallSpeed) fallSpeed = maxFallSpeed;
 
           top += fallSpeed;
 
-          // Когда достигли центра — останавливаем падение
           if (top >= targetY) {
             top = targetY;
             clearInterval(fallInterval);
             container.style.top = `${top}%`;
 
-            // С этого момента — начинаем двигаться
-            startMovement({ element: container, velocity: { x: (Math.random() - 0.5) * 8, y: (Math.random() - 0.5) * 8 } });
+            // ТОЛЬКО ТЕПЕРЬ — запускаем хаотичное движение с этого места
+            startMovement(container, cucumber);
           } else {
             container.style.top = `${top}%`;
           }
         }, 30);
 
+        // Клик по картинке
         cucumber.addEventListener('click', function () {
           if (cucumber.classList.contains('clicked')) return;
           cucumber.classList.add('clicked');
 
-          // Останавливаем движение
-          if (this.moveInterval) clearInterval(this.moveInterval);
+          if (cucumber.moveInterval) {
+            clearInterval(cucumber.moveInterval);
+          }
 
           cucumber.classList.add('growing');
 
@@ -149,29 +153,33 @@
             textBox.textContent = words[index];
             container.appendChild(textBox);
 
+            // Удаляем из системы отслеживания
             const idx = containers.findIndex(c => c.element === container);
             if (idx !== -1) containers.splice(idx, 1);
           }, 1800);
         });
       }
 
-      function startMovement(containerData) {
-        const { element } = containerData;
-        const velocity = containerData.velocity;
+      function startMovement(container, cucumber) {
+        const velocity = {
+          x: (Math.random() - 0.5) * 8,
+          y: (Math.random() - 0.5) * 8
+        };
 
-        // Сохраняем интервал в элемент, чтобы можно было остановить
+        // Сохраняем интервал, чтобы можно было остановить при клике
         cucumber.moveInterval = setInterval(() => {
-          let left = parseFloat(element.style.left) || 0;
-          let top = parseFloat(element.style.top) || 0;
+          let left = parseFloat(container.style.left) || 0;
+          let top = parseFloat(container.style.top) || 0;
 
+          // Применяем движение
           left += velocity.x / 10;
           top += velocity.y / 10;
 
-          // Отталкивание от других
+          // Проверка на столкновение с другими
           containers.forEach(other => {
-            if (other.element === element || !document.body.contains(other.element)) return;
+            if (other.element === container || !document.body.contains(other.element)) return;
 
-            const rect1 = element.getBoundingClientRect();
+            const rect1 = container.getBoundingClientRect();
             const rect2 = other.element.getBoundingClientRect();
 
             const dx = (rect2.left + rect2.width / 2) - (rect1.left + rect1.width / 2);
@@ -185,7 +193,7 @@
             }
           });
 
-          // Границы — центр
+          // Ограничение по зоне (центр экрана)
           const minX = 30, maxX = 70;
           const minY = 25, maxY = 65;
 
@@ -198,12 +206,16 @@
             top = top < minY ? minY : maxY;
           }
 
-          element.style.left = `${left}%`;
-          element.style.top = `${top}%`;
+          container.style.left = `${left}%`;
+          container.style.top = `${top}%`;
 
+          // Затухание скорости
           velocity.x *= 0.98;
           velocity.y *= 0.98;
         }, 60);
+
+        // Добавляем в общий список для отслеживания столкновений
+        containers.push({ element: container, velocity });
       }
     });
   </script>
