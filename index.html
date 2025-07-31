@@ -41,27 +41,26 @@
       object-fit: contain;
     }
 
-    @keyframes fall {
+    /* Анимация падения — через изменение top */
+    @keyframes fall-straight {
       0% {
-        transform: translateY(-100vh) scale(0.2);
+        top: -100px;
         opacity: 0;
-      }
-      70% {
-        transform: translateY(10px) scale(1.1);
-        opacity: 1;
+        transform: scale(0.2);
       }
       100% {
-        transform: translateY(0) scale(1);
+        top: 40%; /* Центр экрана по вертикали */
         opacity: 1;
+        transform: scale(1);
       }
     }
 
     .falling {
-      animation: fall 1.8s ease-out forwards;
+      animation: fall-straight 1.8s ease-out forwards;
     }
 
     .growing {
-      width: 144px;   /* Уменьшено на 20% */
+      width: 144px;
       height: 240px;
     }
 
@@ -76,8 +75,8 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: #FFA500; /* Оранжевый фон */
-      color: #000; /* Чёрный текст */
+      background: #FFA500;
+      color: #000;
       font-size: 24px;
       font-weight: bold;
       padding: 12px 20px;
@@ -98,7 +97,8 @@
     ];
 
     const containers = [];
-    const bottomY = 65; // Нижняя зона (в процентах от высоты экрана)
+    const targetY = 40; // Центр экрана (по вертикали)
+    const targetX = 50;  // Точная центральная точка
 
     document.addEventListener('DOMContentLoaded', function () {
       const body = document.body;
@@ -108,21 +108,21 @@
       }
 
       function createCucumber(index) {
-        // Случайное положение по горизонтали, но в нижней части
-        const startX = Math.random() * 60 + 20; // 20% – 80%
+        // Начинаем за экраном — сверху
+        const startX = Math.random() * 20 + 40; // около центра: 40%–60%
 
         const container = document.createElement('div');
         container.className = 'cucumber-container';
         container.style.left = `${startX}%`;
-        container.style.top = '-150px'; // Начинаем за верхней границей
+        container.style.top = '-100px'; // Начинаем выше экрана
         body.appendChild(container);
 
         const cucumber = document.createElement('div');
-        cucumber.className = 'cucumber falling';
+        cucumber.className = 'cucumber falling'; // Анимация меняет top до 40%
         cucumber.innerHTML = `<img src="https://i.pinimg.com/originals/fc/a7/66/fca766643693b021645b276bd61ad09e.png" alt="Огурец">`;
         container.appendChild(cucumber);
 
-        // Начальная скорость для движения
+        // После анимации top станет 40% — это и будет стартовой точкой
         const velocity = {
           x: (Math.random() - 0.5) * 8,
           y: (Math.random() - 0.5) * 8
@@ -133,13 +133,11 @@
 
         let moveInterval;
 
-        // После окончания падения — фиксируем в нижней зоне и запускаем движение
+        // Запускаем движение ПОСЛЕ окончания падения
         setTimeout(() => {
-          container.style.left = `${startX}%`;
-          container.style.top = `${bottomY}%`;
-
+          // К этому моменту анимация закончилась: top = 40%, left = startX%
           moveInterval = startMovement(containerData);
-        }, 1800); // = длине анимации падения
+        }, 1800);
 
         cucumber.addEventListener('click', function () {
           if (cucumber.classList.contains('clicked')) return;
@@ -196,9 +194,9 @@
             }
           });
 
-          // Ограничение движения — нижняя центральная зона
-          const minX = 20, maxX = 80;
-          const minY = 50, maxY = 75;
+          // Ограничение — центральная зона
+          const minX = 30, maxX = 70;
+          const minY = 25, maxY = 65;
 
           if (left <= minX || left >= maxX) {
             velocity.x *= -1;
