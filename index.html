@@ -99,7 +99,7 @@
         container.className = 'cucumber-container';
         container.style.left = `${left}%`;
         container.style.top = `${startTop}%`;
-        container.dataset.index = i; // Ключ: индекс у контейнера
+        container.dataset.index = i;
         body.appendChild(container);
 
         const cucumber = document.createElement('div');
@@ -109,6 +109,7 @@
 
         cucumber.moveInterval = null;
 
+        // Начальная скорость — постоянная
         const velocity = {
           x: (Math.random() - 0.5) * 8,
           y: (Math.random() - 0.5) * 8
@@ -144,18 +145,17 @@
 
     function startAllMovement() {
       containers.forEach(({ element, cucumber, velocity }) => {
-        // Убедимся, что позиция в %
         element.style.top = `${endTop}%`;
 
         cucumber.moveInterval = setInterval(() => {
           let left = parseFloat(element.style.left) || 0;
           let top = parseFloat(element.style.top) || 0;
 
-          // Двигаем
-          left += velocity.x / 10;
-          top += velocity.y / 10;
+          // Двигаемся с постоянной скоростью
+          left += velocity.x;
+          top += velocity.y;
 
-          // Отталкивание
+          // Отталкивание от других
           containers.forEach(other => {
             if (other.element === element || !document.body.contains(other.element)) return;
 
@@ -166,13 +166,13 @@
             const dist = Math.sqrt(dx*dx + dy*dy);
 
             if (dist < 150) {
-              const force = 0.7;
+              const force = 1.0;
               velocity.x -= dx / dist * force;
               velocity.y -= dy / dist * force;
             }
           });
 
-          // Границы
+          // Границы экрана — отскок
           const minX = 10, maxX = 90;
           const minY = 20, maxY = 70;
 
@@ -185,11 +185,11 @@
             top = top < minY ? minY : maxY;
           }
 
+          // Сохраняем позицию
           element.style.left = `${left.toFixed(1)}%`;
           element.style.top = `${top.toFixed(1)}%`;
 
-          velocity.x *= 0.98;
-          velocity.y *= 0.98;
+          // 🔥 Убрали: velocity.x *= 0.98 — теперь НЕ ЗАТУХАЕТ!
         }, 60);
       });
     }
@@ -200,9 +200,8 @@
       if (!cucumber || cucumber.classList.contains('clicked')) return;
 
       const container = cucumber.parentElement;
-      if (!container || !container.dataset.index) return;
-
       const index = parseInt(container.dataset.index);
+
       if (isNaN(index) || index < 0 || index >= words.length) return;
 
       cucumber.classList.add('clicked');
@@ -219,7 +218,7 @@
       }, 1000);
 
       setTimeout(() => {
-        cucumber.style.display = 'none'; // Скрываем, но не удаляем
+        cucumber.style.display = 'none';
 
         const textBox = document.createElement('div');
         textBox.className = 'text-box';
