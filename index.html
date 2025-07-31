@@ -89,8 +89,8 @@
     const margin = 15;
     const step = totalWidth / (count - 1);
 
-    // Максимальная скорость — чтобы не ускорялись
-    const maxSpeed = 1.0;
+    // Постоянная скорость
+    const speed = 0.3; // Очень медленно
 
     document.addEventListener('DOMContentLoaded', function () {
       const body = document.body;
@@ -112,15 +112,14 @@
 
         cucumber.moveInterval = null;
 
-        // Начальная скорость — очень маленькая
-        let speed = 0.5;
+        // Начальное направление
         let angle = Math.random() * Math.PI * 2;
         const velocity = {
           x: Math.cos(angle) * speed,
           y: Math.sin(angle) * speed
         };
 
-        containers.push({ element: container, cucumber, velocity, angle });
+        containers.push({ element: container, cucumber, velocity });
       }
 
       setTimeout(startFalling, 500);
@@ -160,16 +159,16 @@
           left += velocity.x;
           top += velocity.y;
 
-          // Плавное изменение направления (как "шагающий робот")
-          if (Math.random() < 0.02) {
-            const turn = (Math.random() - 0.5) * 0.2;
+          // Иногда немного меняем направление — плавно
+          if (Math.random() < 0.03) {
+            const turn = (Math.random() - 0.5) * 0.3;
             const currentAngle = Math.atan2(velocity.y, velocity.x);
             const newAngle = currentAngle + turn;
-            velocity.x = Math.cos(newAngle) * 0.5;
-            velocity.y = Math.sin(newAngle) * 0.5;
+            velocity.x = Math.cos(newAngle) * speed;
+            velocity.y = Math.sin(newAngle) * speed;
           }
 
-          // Границы экрана — отскок
+          // Границы — мягкий отскок
           const minX = 10, maxX = 90;
           const minY = 20, maxY = 70;
 
@@ -182,17 +181,11 @@
             top = top < minY ? minY : maxY;
           }
 
-          // Ограничиваем скорость, чтобы не ускорялись
-          const speed = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
-          if (speed > 0.6) {
-            velocity.x = (velocity.x / speed) * 0.6;
-            velocity.y = (velocity.y / speed) * 0.6;
-          }
-
           element.style.left = `${left.toFixed(2)}%`;
           element.style.top = `${top.toFixed(2)}%`;
 
-        }, 120); // Обновляем каждые 120мс — плавно и медленно
+          // 🔥 Никаких ускорений, никакой физики — только плавное движение
+        }, 100); // Плавно, но не медленно
       });
     }
 
