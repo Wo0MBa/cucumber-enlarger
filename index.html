@@ -57,7 +57,7 @@
     }
 
     .falling {
-      animation: fall 1.5s ease-out forwards;
+      animation: fall 1.8s ease-out forwards; /* Замедлено на 20%: было 1.5s → стало 1.8s */
     }
 
     .growing {
@@ -111,17 +111,17 @@
         const container = document.createElement('div');
         container.className = 'cucumber-container';
 
-        // Начинаем за верхней границей экрана
+        // Начальная позиция — за верхней границей
         container.style.left = Math.random() * 60 + 20 + '%'; // 20%–80%
-        container.style.top = '-100px';
+        container.style.top = '-150px'; // Немного выше
         body.appendChild(container);
 
         const cucumber = document.createElement('div');
-        cucumber.className = 'cucumber falling'; // Анимация падения
+        cucumber.className = 'cucumber falling'; // Анимация падения (1.8s)
         cucumber.innerHTML = `<img src="https://i.pinimg.com/originals/fc/a7/66/fca766643693b021645b276bd61ad09e.png" alt="Огурец">`;
         container.appendChild(cucumber);
 
-        // Начальная скорость после падения
+        // Начальная скорость
         const velocity = {
           x: (Math.random() - 0.5) * 8,
           y: (Math.random() - 0.5) * 8
@@ -135,10 +135,9 @@
 
         // Запускаем движение после падения
         setTimeout(() => {
-          // Устанавливаем начальное положение в видимой области
-          container.style.top = '25%'; // Начинаем движение с этой высоты
+          container.style.top = '25%'; // Фиксируем начальное положение в видимой зоне
           moveInterval = startSmartMovement(containerData);
-        }, 1600);
+        }, 1800); // Соответствует длительности анимации (1.8s)
 
         cucumber.addEventListener('click', function () {
           if (cucumber.classList.contains('clicked')) return;
@@ -160,7 +159,7 @@
             textBox.textContent = words[index];
             container.appendChild(textBox);
 
-            // Удаляем из проверки столкновений
+            // Удаляем из системы отслеживания
             const idx = containers.findIndex(c => c.element === container);
             if (idx !== -1) containers.splice(idx, 1);
           }, 1800);
@@ -178,7 +177,7 @@
           left += velocity.x / 10;
           top += velocity.y / 10;
 
-          // Проверка на столкновение с другими
+          // Проверка на столкновение
           containers.forEach(other => {
             if (other.element === element || !document.body.contains(other.element)) return;
 
