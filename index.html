@@ -5,74 +5,74 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Растущие огурцы</title>
   <style>
-  body {
-    margin: 0;
-    padding: 0;
-    min-height: 100vh;
-    background: transparent;
-    overflow: hidden;
-    font-family: 'Arial', sans-serif;
-  }
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background: transparent;
+      overflow: hidden;
+      font-family: 'Arial', sans-serif;
+    }
 
-  .cucumber-container {
-    position: absolute;
-    width: 150px;
-    height: 300px;
-    display: flex;
-    justify-content: center;
-    align-items: flex-end;
-    pointer-events: none;
-    transform: translateZ(0);
-    will-change: top, left;
-  }
+    .cucumber-container {
+      position: absolute;
+      width: 150px;
+      height: 300px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      pointer-events: none;
+      transform: translateZ(0);
+      will-change: top, left;
+    }
 
-  .cucumber {
-    position: absolute;
-    bottom: 0;
-    width: 60px;
-    height: 100px;
-    cursor: pointer;
-    transition: all 2s cubic-bezier(0.34, 1.56, 0.64, 1);
-    transform-origin: bottom center;
-    pointer-events: auto;
-  }
+    .cucumber {
+      position: absolute;
+      bottom: 0;
+      width: 60px;
+      height: 100px;
+      cursor: pointer;
+      transition: all 2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transform-origin: bottom center;
+      pointer-events: auto;
+    }
 
-  .cucumber img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    image-rendering: crisp-edges;
-  }
+    .cucumber img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      image-rendering: crisp-edges;
+    }
 
-  .growing {
-    width: 144px;
-    height: 240px;
-  }
+    .growing {
+      width: 144px;
+      height: 240px;
+    }
 
-  .disappearing {
-    opacity: 0 !important;
-    transform: scale(0.1) !important;
-    transition: all 0.8s ease-out !important;
-  }
+    .disappearing {
+      opacity: 0 !important;
+      transform: scale(0.1) !important;
+      transition: all 0.8s ease-out !important;
+    }
 
-  .text-box {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #FFA500;
-    color: #000;
-    font-size: 24px;
-    font-weight: bold;
-    padding: 12px 20px;
-    border: 2px solid #fff;
-    border-radius: 8px;
-    white-space: nowrap;
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
-    pointer-events: none;
-    text-align: center;
-  }
-</style>
+    .text-box {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #FFA500;
+      color: #000;
+      font-size: 24px;
+      font-weight: bold;
+      padding: 12px 20px;
+      border: 2px solid #fff;
+      border-radius: 8px;
+      white-space: nowrap;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+      pointer-events: none;
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
   <script>
@@ -88,6 +88,9 @@
     const totalWidth = 70;
     const margin = 15;
     const step = totalWidth / (count - 1);
+
+    // Максимальная скорость — чтобы не ускорялись
+    const maxSpeed = 1.0;
 
     document.addEventListener('DOMContentLoaded', function () {
       const body = document.body;
@@ -109,13 +112,15 @@
 
         cucumber.moveInterval = null;
 
-        // Очень маленькая начальная скорость
+        // Начальная скорость — очень маленькая
+        let speed = 0.5;
+        let angle = Math.random() * Math.PI * 2;
         const velocity = {
-          x: (Math.random() - 0.5) * 0.8,
-          y: (Math.random() - 0.5) * 0.8
+          x: Math.cos(angle) * speed,
+          y: Math.sin(angle) * speed
         };
 
-        containers.push({ element: container, cucumber, velocity });
+        containers.push({ element: container, cucumber, velocity, angle });
       }
 
       setTimeout(startFalling, 500);
@@ -147,33 +152,24 @@
       containers.forEach(({ element, cucumber, velocity }) => {
         element.style.top = `${endTop}%`;
 
-        // Замедляем обновление — плавнее, меньше "дрожи"
         cucumber.moveInterval = setInterval(() => {
           let left = parseFloat(element.style.left) || 0;
           let top = parseFloat(element.style.top) || 0;
 
-          // Очень медленное движение
+          // Двигаемся с постоянной скоростью
           left += velocity.x;
           top += velocity.y;
 
-          // Очень слабое отталкивание — чтобы не ускорялись
-          containers.forEach(other => {
-            if (other.element === element || !document.body.contains(other.element)) return;
+          // Плавное изменение направления (как "шагающий робот")
+          if (Math.random() < 0.02) {
+            const turn = (Math.random() - 0.5) * 0.2;
+            const currentAngle = Math.atan2(velocity.y, velocity.x);
+            const newAngle = currentAngle + turn;
+            velocity.x = Math.cos(newAngle) * 0.5;
+            velocity.y = Math.sin(newAngle) * 0.5;
+          }
 
-            const r1 = element.getBoundingClientRect();
-            const r2 = other.element.getBoundingClientRect();
-            const dx = (r2.left + r2.width/2) - (r1.left + r1.width/2);
-            const dy = (r2.top + r2.height/2) - (r1.top + r1.height/2);
-            const dist = Math.sqrt(dx*dx + dy*dy);
-
-            if (dist < 150) {
-              const force = 0.3; // Очень слабое отталкивание
-              velocity.x -= dx / dist * force;
-              velocity.y -= dy / dist * force;
-            }
-          });
-
-          // Границы — отскок, но мягко
+          // Границы экрана — отскок
           const minX = 10, maxX = 90;
           const minY = 20, maxY = 70;
 
@@ -186,11 +182,17 @@
             top = top < minY ? minY : maxY;
           }
 
+          // Ограничиваем скорость, чтобы не ускорялись
+          const speed = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
+          if (speed > 0.6) {
+            velocity.x = (velocity.x / speed) * 0.6;
+            velocity.y = (velocity.y / speed) * 0.6;
+          }
+
           element.style.left = `${left.toFixed(2)}%`;
           element.style.top = `${top.toFixed(2)}%`;
 
-          // 🔥 Никакого затухания — но и нет ускорения
-        }, 100); // Обновляем реже → плавнее
+        }, 120); // Обновляем каждые 120мс — плавно и медленно
       });
     }
 
