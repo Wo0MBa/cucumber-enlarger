@@ -25,6 +25,8 @@
       /* Аппаратное ускорение */
       transform: translateZ(0);
       will-change: top, left;
+      /* Z-индекс по порядку появления */
+      z-index: 1;
     }
 
     .cucumber {
@@ -42,8 +44,6 @@
       width: 100%;
       height: 100%;
       object-fit: contain;
-      /* Отключаем сглаживание для резкости (если нужно) */
-      image-rendering: -webkit-optimize-contrast;
       image-rendering: crisp-edges;
     }
 
@@ -74,6 +74,7 @@
       box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
       pointer-events: none;
       text-align: center;
+      z-index: 2;
     }
   </style>
 </head>
@@ -85,25 +86,27 @@
     ];
 
     const containers = [];
-    const targetY = 40; // Высота приземления
+    const targetY = 40;
 
     document.addEventListener('DOMContentLoaded', function () {
       const body = document.body;
-      const delay = 800;
+      const delay = 1200; // Увеличена задержка между падениями
 
       for (let i = 0; i < 8; i++) {
+        // Каждая картинка появляется только после полного завершения предыдущей анимации падения
         setTimeout(() => {
           createCucumber(i);
         }, delay * i);
       }
 
       function createCucumber(index) {
-        const startX = Math.random() * 60 + 20; // 20%–80%
+        const startX = Math.random() * 60 + 20;
 
         const container = document.createElement('div');
         container.className = 'cucumber-container';
         container.style.left = `${startX}%`;
         container.style.top = '-100px';
+        container.style.zIndex = 10 + index; // Чем позже — тем выше z-index, но не влияет на "вспышки"
         body.appendChild(container);
 
         const cucumber = document.createElement('div');
@@ -115,9 +118,10 @@
 
         // Физика падения
         let fallSpeed = 0;
-        const gravity = 0.6;        // Снижено — плавнее
-        const maxFallSpeed = 1.0;   // Максимум — меньше рывков
+        const gravity = 0.5;
+        const maxFallSpeed = 0.9;
 
+        // Устанавливаем, что анимация падения длится ~1.2–1.5 сек
         const fallInterval = setInterval(() => {
           let top = parseFloat(container.style.top) || 0;
           fallSpeed += gravity;
@@ -125,15 +129,18 @@
 
           top += fallSpeed;
 
-          // Округляем до 1 знака — меньше изменений → нет дрожи
+          // Округляем, чтобы избежать дробных скачков
           if (top >= targetY) {
             top = targetY;
             clearInterval(fallInterval);
-          }
+            container.style.top = `${top}%`;
 
-          // Ключевое: округляем значение
-          container.style.top = `${top.toFixed(1)}%`;
-        }, 30); // Интервал оставлен, но с округлением — плавно
+            // Только после полного приземления — начинаем движение
+            startMovement(container, cucumber);
+          } else {
+            container.style.top = `${top.toFixed(1)}%`;
+          }
+        }, 30);
 
         cucumber.addEventListener('click', function () {
           if (cucumber.classList.contains('clicked')) return;
@@ -200,4 +207,23 @@
 
           if (left <= minX || left >= maxX) {
             velocity.x *= -1;
-            left =
+            left = left < minX ? minX : maxX;
+          }
+          if (top <= minY || top >= maxY) {
+            velocity.y *= -1;
+            top = top < minY ? minY : maxY;
+          }
+
+          container.style.left = `${left.toFixed(1)}%`;
+          container.style.top = `${top.toFixed(1)}%`;
+
+          velocity.x *= 0.98;
+          velocity.y *= 0.98;
+        }, 60);
+
+        containers.push({ element: container, velocity });
+      }
+    });
+  </script>
+</body>
+</html>
