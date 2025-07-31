@@ -41,13 +41,13 @@
       object-fit: contain;
     }
 
-    @keyframes fall {
+    @keyframes fall-to-center {
       0% {
         transform: translateY(-100vh) scale(0.2);
         opacity: 0;
       }
       70% {
-        transform: translateY(10px) scale(1.1);
+        transform: translateY(20px) scale(1.1);
         opacity: 1;
       }
       100% {
@@ -57,7 +57,7 @@
     }
 
     .falling {
-      animation: fall 1.8s ease-out forwards;
+      animation: fall-to-center 1.8s ease-out forwards;
     }
 
     .growing {
@@ -98,6 +98,8 @@
     ];
 
     const containers = [];
+    const centerX = 50; // Центр экрана по горизонтали
+    const centerY = 40; // Центральная зона (чуть выше середины)
 
     document.addEventListener('DOMContentLoaded', function () {
       const body = document.body;
@@ -107,127 +109,5 @@
       }
 
       function createCucumber(index) {
-        // Случайная позиция по X — где упадёт
-        const startX = Math.random() * 60 + 20; // 20% – 80%
-
         const container = document.createElement('div');
-        container.className = 'cucumber-container';
-        container.style.left = `${startX}%`;
-        container.style.top = '-150px'; // Начинаем за экраном
-        body.appendChild(container);
-
-        const cucumber = document.createElement('div');
-        cucumber.className = 'cucumber falling'; // Анимация падения
-        cucumber.innerHTML = `<img src="https://i.pinimg.com/originals/fc/a7/66/fca766643693b021645b276bd61ad09e.png" alt="Огурец">`;
-        container.appendChild(cucumber);
-
-        // Начальная скорость для движения после падения
-        const velocity = {
-          x: (Math.random() - 0.5) * 8,
-          y: (Math.random() - 0.5) * 8
-        };
-
-        const containerData = { element: container, velocity };
-        containers.push(containerData);
-
-        let moveInterval;
-
-        // Запускаем движение сразу ПОСЛЕ окончания падения
-        setTimeout(() => {
-          // К этому моменту анимация закончилась, элемент "приземлился"
-          // Получаем реальную позицию через getBoundingClientRect()
-          const rect = container.getBoundingClientRect();
-          const left = rect.left + window.scrollX;
-          const top = rect.top + window.scrollY;
-
-          // Устанавливаем координаты в пикселях для точного контроля
-          container.style.position = 'fixed';
-          container.style.left = `${left}px`;
-          container.style.top = `${top}px`;
-
-          // Теперь запускаем движение
-          moveInterval = startSmoothMovement(containerData);
-        }, 1800); // = длительности анимации падения
-
-        cucumber.addEventListener('click', function () {
-          if (cucumber.classList.contains('clicked')) return;
-          cucumber.classList.add('clicked');
-
-          if (moveInterval) clearInterval(moveInterval);
-
-          cucumber.classList.add('growing');
-
-          setTimeout(() => {
-            cucumber.classList.add('disappearing');
-          }, 1000);
-
-          setTimeout(() => {
-            cucumber.remove();
-
-            const textBox = document.createElement('div');
-            textBox.className = 'text-box';
-            textBox.textContent = words[index];
-            container.appendChild(textBox);
-
-            const idx = containers.findIndex(c => c.element === container);
-            if (idx !== -1) containers.splice(idx, 1);
-          }, 1800);
-        });
-      }
-
-      function startSmoothMovement(containerData) {
-        return setInterval(() => {
-          const { element, velocity } = containerData;
-
-          let left = parseFloat(element.style.left);
-          let top = parseFloat(element.style.top);
-
-          // Применяем движение
-          left += velocity.x;
-          top += velocity.y;
-
-          // Проверка на столкновения с другими
-          containers.forEach(other => {
-            if (other.element === element || !document.body.contains(other.element)) return;
-
-            const rect1 = element.getBoundingClientRect();
-            const rect2 = other.element.getBoundingClientRect();
-
-            const dx = (rect2.left + rect2.width / 2) - (rect1.left + rect1.width / 2);
-            const dy = (rect2.top + rect2.height / 2) - (rect1.top + rect1.height / 2);
-            const distance = Math.sqrt(dx * dx + dy * dy);
-
-            if (distance < 150) {
-              const force = 0.7;
-              velocity.x -= dx / distance * force;
-              velocity.y -= dy / distance * force;
-            }
-          });
-
-          // Ограничение по краям экрана (в пикселях)
-          const minX = window.innerWidth * 0.2;
-          const maxX = window.innerWidth * 0.8;
-          const minY = window.innerHeight * 0.2;
-          const maxY = window.innerHeight * 0.7;
-
-          if (left <= minX || left >= maxX) {
-            velocity.x *= -1;
-            left = left < minX ? minX : maxX;
-          }
-          if (top <= minY || top >= maxY) {
-            velocity.y *= -1;
-            top = top < minY ? minY : maxY;
-          }
-
-          element.style.left = `${left}px`;
-          element.style.top = `${top}px`;
-
-          // Затухание скорости
-          velocity.x *= 0.98;
-          velocity.y *= 0.98;
-        }, 60);
-      }
-    });
-  </script>
-</body>
-</html>
+        container.className = '
