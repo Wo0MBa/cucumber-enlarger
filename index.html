@@ -9,21 +9,17 @@
       margin: 0;
       padding: 0;
       min-height: 100vh;
-      background: transparent;
+      background: #000;
       display: flex;
       justify-content: center;
       align-items: center;
       overflow: hidden;
+      font-family: 'Arial', sans-serif;
     }
 
-    .container {
-      display: flex;
-      gap: 60px;
-      padding: 20px;
-    }
-
+    /* Контейнер не нужен — элементы теперь свободны */
     .cucumber-container {
-      position: relative;
+      position: absolute;
       width: 150px;
       height: 300px;
       display: flex;
@@ -47,62 +43,145 @@
       object-fit: contain;
     }
 
-    .cucumber.growing {
+    /* Анимация падения сверху */
+    @keyframes fall {
+      0% {
+        transform: translateY(-100vh) scale(0.2);
+        opacity: 0;
+      }
+      70% {
+        transform: translateY(10px) scale(1.1);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+    }
+
+    /* Класс для анимации падения */
+    .falling {
+      animation: fall 1.5s ease-out forwards;
+    }
+
+    /* Увеличение при клике */
+    .growing {
       width: 180px;
       height: 300px;
     }
 
-    .cucumber.disappearing {
+    /* Исчезновение */
+    .disappearing {
+      opacity: 0 !important;
+      transform: scale(0.1) !important;
+      transition: all 1s ease-out !important;
+    }
+
+    /* Текст, появляющийся после исчезновения */
+    .floating-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 28px;
+      font-weight: bold;
+      color: #00aaff;
+      text-shadow: 0 0 10px rgba(0, 200, 255, 0.8);
+      pointer-events: none;
       opacity: 0;
-      transform: scale(0.1);
+      animation: fadeInUp 1s ease-out 3s forwards;
+    }
+
+    @keyframes fadeInUp {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) translateY(20px);
+      }
+      100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) translateY(0);
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="cucumber-container">
-      <div class="cucumber" id="cucumber1">
-        <img src="https://i.pinimg.com/originals/fc/a7/66/fca766643693b021645b276bd61ad09e.png" alt="Огурец 1">
-      </div>
-    </div>
-    
-    <div class="cucumber-container">
-      <div class="cucumber" id="cucumber2">
-        <img src="https://i.pinimg.com/originals/fc/a7/66/fca766643693b021645b276bd61ad09e.png" alt="Огурец 2">
-      </div>
-    </div>
-    
-    <div class="cucumber-container">
-      <div class="cucumber" id="cucumber3">
-        <img src="https://i.pinimg.com/originals/fc/a7/66/fca766643693b021645b276bd61ad09e.png" alt="Огурец 3">
-      </div>
-    </div>
-  </div>
-
+  <!-- Картинки будут добавляться динамически -->
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const cucumbers = [
-        document.getElementById('cucumber1'),
-        document.getElementById('cucumber2'),
-        document.getElementById('cucumber3')
-      ];
-      
-      cucumbers.forEach((cucumber) => {
-        cucumber.addEventListener('click', function() {
-          // Начинаем расти
-          this.classList.add('growing');
-          
-          // Через 2 секунды начинаем исчезать
+    // Слова, которые появятся после исчезновения картинок
+    const words = ["Твори", "Верь", "Мечтай"];
+
+    document.addEventListener('DOMContentLoaded', function () {
+      const body = document.body;
+
+      // Создаём 3 огурца
+      for (let i = 0; i < 3; i++) {
+        createCucumber(i);
+      }
+
+      function createCucumber(index) {
+        const container = document.createElement('div');
+        container.className = 'cucumber-container';
+        container.style.left = Math.random() * 80 + 10 + '%'; // случайное положение по горизонтали
+        container.style.top = '-200px'; // начинаем за экраном
+        body.appendChild(container);
+
+        const cucumber = document.createElement('div');
+        cucumber.className = 'cucumber falling'; // падает с анимацией
+        cucumber.innerHTML = `<img src="https://i.pinimg.com/originals/fc/a7/66/fca766643693b021645b276bd61ad09e.png" alt="Огурец">`;
+        container.appendChild(cucumber);
+
+        // Через 1.5 секунды (после падения) запускаем хаотичное движение
+        setTimeout(() => {
+          startRandomMovement(container);
+        }, 1600);
+
+        // Обработчик клика
+        cucumber.addEventListener('click', function () {
+          if (cucumber.classList.contains('clicked')) return; // защита от двойного клика
+          cucumber.classList.add('clicked');
+
+          // Увеличиваем
+          cucumber.classList.add('growing');
+
+          // Через 2 секунды — исчезаем
           setTimeout(() => {
-            this.classList.add('disappearing');
+            cucumber.classList.add('disappearing');
           }, 2000);
-          
-          // Полностью удаляем через 3 секунды
+
+          // Через 3 секунды — удаляем и показываем текст
           setTimeout(() => {
-            this.remove();
+            cucumber.remove();
+
+            const text = document.createElement('div');
+            text.className = 'floating-text';
+            text.textContent = words[index] || `Слово ${index + 1}`;
+            container.appendChild(text);
           }, 3000);
         });
-      });
+      }
+
+      // Функция хаотичного движения
+      function startRandomMovement(element) {
+        const moveInterval = setInterval(() => {
+          const dx = (Math.random() - 0.5) * 10; // небольшое смещение по X
+          const dy = (Math.random() - 0.5) * 10; // по Y
+
+          const currentLeft = parseFloat(element.style.left) || 0;
+          const currentTop = parseFloat(element.style.top) || 0;
+
+          let newLeft = currentLeft + dx;
+          let newTop = currentTop + dy;
+
+          // Ограничиваем движение в пределах экрана
+          newLeft = Math.max(10, Math.min(newLeft, 90)) + '%';
+          newTop = Math.max(10, Math.min(newTop, 80)) + '%';
+
+          element.style.left = newLeft;
+          element.style.top = newTop;
+        }, 300); // обновляется каждые 300 мс
+
+        // Можно остановить через время, но пусть двигается, пока не кликнут
+      }
     });
   </script>
 </body>
