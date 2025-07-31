@@ -79,13 +79,17 @@
     ];
 
     const containers = [];
-    const targetY = 40; // Центр экрана по вертикали
+    const targetY = 40; // Центр экрана
 
     document.addEventListener('DOMContentLoaded', function () {
       const body = document.body;
+      const delay = 800; // Задержка между появлением картинок
 
       for (let i = 0; i < 8; i++) {
-        createCucumber(i);
+        // Каждая картинка появляется с задержкой
+        setTimeout(() => {
+          createCucumber(i);
+        }, delay * i); // 0, 800, 1600, 2400... мс
       }
 
       function createCucumber(index) {
@@ -102,15 +106,14 @@
         cucumber.innerHTML = `<img src="https://i.pinimg.com/originals/fc/a7/66/fca766643693b021645b276bd61ad09e.png" alt="Огурец">`;
         container.appendChild(cucumber);
 
-        // Скорость падения
+        // Для остановки движения при клике
+        cucumber.moveInterval = null;
+
+        // Падение
         let fallSpeed = 0;
         const gravity = 0.8;
         const maxFallSpeed = 1.2;
 
-        // Для доступа к moveInterval изнутри клика
-        cucumber.moveInterval = null;
-
-        // Анимация падения через setInterval
         const fallInterval = setInterval(() => {
           let top = parseFloat(container.style.top) || 0;
           fallSpeed += gravity;
@@ -123,14 +126,13 @@
             clearInterval(fallInterval);
             container.style.top = `${top}%`;
 
-            // ТОЛЬКО ТЕПЕРЬ — запускаем хаотичное движение с этого места
+            // Только после падения — начинаем двигаться
             startMovement(container, cucumber);
           } else {
             container.style.top = `${top}%`;
           }
         }, 30);
 
-        // Клик по картинке
         cucumber.addEventListener('click', function () {
           if (cucumber.classList.contains('clicked')) return;
           cucumber.classList.add('clicked');
@@ -153,7 +155,6 @@
             textBox.textContent = words[index];
             container.appendChild(textBox);
 
-            // Удаляем из системы отслеживания
             const idx = containers.findIndex(c => c.element === container);
             if (idx !== -1) containers.splice(idx, 1);
           }, 1800);
@@ -166,16 +167,14 @@
           y: (Math.random() - 0.5) * 8
         };
 
-        // Сохраняем интервал, чтобы можно было остановить при клике
         cucumber.moveInterval = setInterval(() => {
           let left = parseFloat(container.style.left) || 0;
           let top = parseFloat(container.style.top) || 0;
 
-          // Применяем движение
           left += velocity.x / 10;
           top += velocity.y / 10;
 
-          // Проверка на столкновение с другими
+          // Отталкивание от других
           containers.forEach(other => {
             if (other.element === container || !document.body.contains(other.element)) return;
 
@@ -193,7 +192,7 @@
             }
           });
 
-          // Ограничение по зоне (центр экрана)
+          // Границы — центр
           const minX = 30, maxX = 70;
           const minY = 25, maxY = 65;
 
@@ -209,12 +208,10 @@
           container.style.left = `${left}%`;
           container.style.top = `${top}%`;
 
-          // Затухание скорости
           velocity.x *= 0.98;
           velocity.y *= 0.98;
         }, 60);
 
-        // Добавляем в общий список для отслеживания столкновений
         containers.push({ element: container, velocity });
       }
     });
