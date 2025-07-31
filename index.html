@@ -22,6 +22,9 @@
       justify-content: center;
       align-items: flex-end;
       pointer-events: none;
+      /* Аппаратное ускорение */
+      transform: translateZ(0);
+      will-change: top, left;
     }
 
     .cucumber {
@@ -39,6 +42,9 @@
       width: 100%;
       height: 100%;
       object-fit: contain;
+      /* Отключаем сглаживание для резкости (если нужно) */
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
     }
 
     .growing {
@@ -79,11 +85,11 @@
     ];
 
     const containers = [];
-    const targetY = 40; // Высота, где заканчивается падение
+    const targetY = 40; // Высота приземления
 
     document.addEventListener('DOMContentLoaded', function () {
       const body = document.body;
-      const delay = 800; // Задержка между появлением
+      const delay = 800;
 
       for (let i = 0; i < 8; i++) {
         setTimeout(() => {
@@ -92,13 +98,12 @@
       }
 
       function createCucumber(index) {
-        // Случайное положение по горизонтали (20% – 80%)
-        const startX = Math.random() * 60 + 20;
+        const startX = Math.random() * 60 + 20; // 20%–80%
 
         const container = document.createElement('div');
         container.className = 'cucumber-container';
         container.style.left = `${startX}%`;
-        container.style.top = '-100px'; // Начинаем за верхней границей
+        container.style.top = '-100px';
         body.appendChild(container);
 
         const cucumber = document.createElement('div');
@@ -108,10 +113,10 @@
 
         cucumber.moveInterval = null;
 
-        // Падение
+        // Физика падения
         let fallSpeed = 0;
-        const gravity = 0.8;
-        const maxFallSpeed = 1.2;
+        const gravity = 0.6;        // Снижено — плавнее
+        const maxFallSpeed = 1.0;   // Максимум — меньше рывков
 
         const fallInterval = setInterval(() => {
           let top = parseFloat(container.style.top) || 0;
@@ -120,17 +125,15 @@
 
           top += fallSpeed;
 
+          // Округляем до 1 знака — меньше изменений → нет дрожи
           if (top >= targetY) {
             top = targetY;
             clearInterval(fallInterval);
-            container.style.top = `${top}%`;
-
-            // Только теперь начинаем двигаться — с места падения
-            startMovement(container, cucumber);
-          } else {
-            container.style.top = `${top}%`;
           }
-        }, 30);
+
+          // Ключевое: округляем значение
+          container.style.top = `${top.toFixed(1)}%`;
+        }, 30); // Интервал оставлен, но с округлением — плавно
 
         cucumber.addEventListener('click', function () {
           if (cucumber.classList.contains('clicked')) return;
@@ -173,7 +176,7 @@
           left += velocity.x / 10;
           top += velocity.y / 10;
 
-          // Отталкивание от других
+          // Отталкивание
           containers.forEach(other => {
             if (other.element === container || !document.body.contains(other.element)) return;
 
@@ -191,29 +194,10 @@
             }
           });
 
-          // Ограничиваем движение в пределах экрана
+          // Границы
           const minX = 15, maxX = 85;
           const minY = 20, maxY = 70;
 
           if (left <= minX || left >= maxX) {
             velocity.x *= -1;
-            left = left < minX ? minX : maxX;
-          }
-          if (top <= minY || top >= maxY) {
-            velocity.y *= -1;
-            top = top < minY ? minY : maxY;
-          }
-
-          container.style.left = `${left}%`;
-          container.style.top = `${top}%`;
-
-          velocity.x *= 0.98;
-          velocity.y *= 0.98;
-        }, 60);
-
-        containers.push({ element: container, velocity });
-      }
-    });
-  </script>
-</body>
-</html>
+            left =
