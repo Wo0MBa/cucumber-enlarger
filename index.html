@@ -10,9 +10,6 @@
       padding: 0;
       min-height: 100vh;
       background: #000;
-      display: flex;
-      justify-content: center;
-      align-items: center;
       overflow: hidden;
       font-family: 'Arial', sans-serif;
     }
@@ -42,7 +39,6 @@
       object-fit: contain;
     }
 
-    /* Анимация падения */
     @keyframes fall {
       0% {
         transform: translateY(-100vh) scale(0.2);
@@ -62,21 +58,18 @@
       animation: fall 1.5s ease-out forwards;
     }
 
-    /* Увеличение при клике */
     .growing {
       width: 180px;
       height: 300px;
     }
 
-    /* Исчезновение */
     .disappearing {
       opacity: 0 !important;
       transform: scale(0.1) !important;
       transition: all 1s ease-out !important;
     }
 
-    /* Текст появляется после исчезновения */
-    .floating-text {
+    .static-text {
       position: absolute;
       top: 50%;
       left: 50%;
@@ -84,21 +77,9 @@
       font-size: 28px;
       font-weight: bold;
       color: #00aaff;
-      text-shadow: 0 0 10px rgba(0, 200, 255, 0.8);
+      text-shadow: 0 0 8px rgba(0, 200, 255, 0.7);
       pointer-events: none;
-      opacity: 0;
-      animation: fadeInUp 1s ease-out 3s forwards;
-    }
-
-    @keyframes fadeInUp {
-      0% {
-        opacity: 0;
-        transform: translate(-50%, -50%) translateY(20px);
-      }
-      100% {
-        opacity: 1;
-        transform: translate(-50%, -50%) translateY(0);
-      }
+      white-space: nowrap;
     }
   </style>
 </head>
@@ -106,20 +87,13 @@
   <script>
     // 8 слов — по одному на каждую картинку
     const words = [
-      "Твори", 
-      "Верь", 
-      "Мечтай", 
-      "Действуй", 
-      "Лети", 
-      "Сияй", 
-      "Измени", 
-      "Побеждай"
+      "Твори", "Верь", "Мечтай", "Действуй",
+      "Лети", "Сияй", "Измени", "Побеждай"
     ];
 
     document.addEventListener('DOMContentLoaded', function () {
       const body = document.body;
 
-      // Создаём 8 огурцов
       for (let i = 0; i < 8; i++) {
         createCucumber(i);
       }
@@ -127,8 +101,8 @@
       function createCucumber(index) {
         const container = document.createElement('div');
         container.className = 'cucumber-container';
-        container.style.left = Math.random() * 80 + 10 + '%'; // случайно по горизонтали
-        container.style.top = '-200px'; // старт за верхней границей
+        container.style.left = Math.random() * 80 + 10 + '%';
+        container.style.top = '-200px'; // за пределами экрана
         body.appendChild(container);
 
         const cucumber = document.createElement('div');
@@ -136,9 +110,12 @@
         cucumber.innerHTML = `<img src="https://i.pinimg.com/originals/fc/a7/66/fca766643693b021645b276bd61ad09e.png" alt="Огурец">`;
         container.appendChild(cucumber);
 
-        // Начинаем хаотичное движение после падения
+        // Переменная для хранения ID интервала движения
+        let moveInterval;
+
+        // Запускаем хаотичное движение после падения
         setTimeout(() => {
-          startRandomMovement(container);
+          moveInterval = startRandomMovement(container);
         }, 1600);
 
         // Обработчик клика
@@ -146,26 +123,33 @@
           if (cucumber.classList.contains('clicked')) return;
           cucumber.classList.add('clicked');
 
+          // Останавливаем движение
+          if (moveInterval) clearInterval(moveInterval);
+
+          // Увеличиваем
           cucumber.classList.add('growing');
 
+          // Через 2 секунды — исчезаем
           setTimeout(() => {
             cucumber.classList.add('disappearing');
           }, 2000);
 
+          // Через 3 секунды — удаляем и показываем текст на этом же месте
           setTimeout(() => {
             cucumber.remove();
 
             const text = document.createElement('div');
-            text.className = 'floating-text';
+            text.className = 'static-text';
             text.textContent = words[index];
             container.appendChild(text);
+            // Текст остаётся навсегда на месте картинки
           }, 3000);
         });
       }
 
-      // Хаотичное движение
+      // Функция хаотичного движения
       function startRandomMovement(element) {
-        setInterval(() => {
+        return setInterval(() => {
           const dx = (Math.random() - 0.5) * 12;
           const dy = (Math.random() - 0.5) * 12;
 
