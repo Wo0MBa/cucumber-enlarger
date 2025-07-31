@@ -79,26 +79,26 @@
     ];
 
     const containers = [];
-    const targetY = 40; // Центр экрана
+    const targetY = 40; // Высота, где заканчивается падение
 
     document.addEventListener('DOMContentLoaded', function () {
       const body = document.body;
-      const delay = 800; // Задержка между появлением картинок
+      const delay = 800; // Задержка между появлением
 
       for (let i = 0; i < 8; i++) {
-        // Каждая картинка появляется с задержкой
         setTimeout(() => {
           createCucumber(i);
-        }, delay * i); // 0, 800, 1600, 2400... мс
+        }, delay * i);
       }
 
       function createCucumber(index) {
-        const startX = Math.random() * 20 + 40; // 40%–60% (вокруг центра)
+        // Случайное положение по горизонтали (20% – 80%)
+        const startX = Math.random() * 60 + 20;
 
         const container = document.createElement('div');
         container.className = 'cucumber-container';
         container.style.left = `${startX}%`;
-        container.style.top = '-100px'; // Начинаем выше экрана
+        container.style.top = '-100px'; // Начинаем за верхней границей
         body.appendChild(container);
 
         const cucumber = document.createElement('div');
@@ -106,7 +106,6 @@
         cucumber.innerHTML = `<img src="https://i.pinimg.com/originals/fc/a7/66/fca766643693b021645b276bd61ad09e.png" alt="Огурец">`;
         container.appendChild(cucumber);
 
-        // Для остановки движения при клике
         cucumber.moveInterval = null;
 
         // Падение
@@ -126,7 +125,7 @@
             clearInterval(fallInterval);
             container.style.top = `${top}%`;
 
-            // Только после падения — начинаем двигаться
+            // Только теперь начинаем двигаться — с места падения
             startMovement(container, cucumber);
           } else {
             container.style.top = `${top}%`;
@@ -192,9 +191,9 @@
             }
           });
 
-          // Границы — центр
-          const minX = 30, maxX = 70;
-          const minY = 25, maxY = 65;
+          // Ограничиваем движение в пределах экрана
+          const minX = 15, maxX = 85;
+          const minY = 20, maxY = 70;
 
           if (left <= minX || left >= maxX) {
             velocity.x *= -1;
