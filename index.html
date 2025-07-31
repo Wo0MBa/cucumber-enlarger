@@ -41,13 +41,13 @@
       object-fit: contain;
     }
 
-    @keyframes fall-to-center {
+    @keyframes fall {
       0% {
         transform: translateY(-100vh) scale(0.2);
         opacity: 0;
       }
       70% {
-        transform: translateY(20px) scale(1.1);
+        transform: translateY(10px) scale(1.1);
         opacity: 1;
       }
       100% {
@@ -57,11 +57,11 @@
     }
 
     .falling {
-      animation: fall-to-center 1.8s ease-out forwards;
+      animation: fall 1.8s ease-out forwards;
     }
 
     .growing {
-      width: 144px;
+      width: 144px;   /* Уменьшено на 20% */
       height: 240px;
     }
 
@@ -76,8 +76,8 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: #FFA500;
-      color: #000;
+      background: #FFA500; /* Оранжевый фон */
+      color: #000; /* Чёрный текст */
       font-size: 24px;
       font-weight: bold;
       padding: 12px 20px;
@@ -98,8 +98,7 @@
     ];
 
     const containers = [];
-    const centerX = 50; // Центр экрана по горизонтали
-    const centerY = 40; // Центральная зона (чуть выше середины)
+    const bottomY = 65; // Нижняя зона (в процентах от высоты экрана)
 
     document.addEventListener('DOMContentLoaded', function () {
       const body = document.body;
@@ -109,5 +108,115 @@
       }
 
       function createCucumber(index) {
+        // Случайное положение по горизонтали, но в нижней части
+        const startX = Math.random() * 60 + 20; // 20% – 80%
+
         const container = document.createElement('div');
-        container.className = '
+        container.className = 'cucumber-container';
+        container.style.left = `${startX}%`;
+        container.style.top = '-150px'; // Начинаем за верхней границей
+        body.appendChild(container);
+
+        const cucumber = document.createElement('div');
+        cucumber.className = 'cucumber falling';
+        cucumber.innerHTML = `<img src="https://i.pinimg.com/originals/fc/a7/66/fca766643693b021645b276bd61ad09e.png" alt="Огурец">`;
+        container.appendChild(cucumber);
+
+        // Начальная скорость для движения
+        const velocity = {
+          x: (Math.random() - 0.5) * 8,
+          y: (Math.random() - 0.5) * 8
+        };
+
+        const containerData = { element: container, velocity };
+        containers.push(containerData);
+
+        let moveInterval;
+
+        // После окончания падения — фиксируем в нижней зоне и запускаем движение
+        setTimeout(() => {
+          container.style.left = `${startX}%`;
+          container.style.top = `${bottomY}%`;
+
+          moveInterval = startMovement(containerData);
+        }, 1800); // = длине анимации падения
+
+        cucumber.addEventListener('click', function () {
+          if (cucumber.classList.contains('clicked')) return;
+          cucumber.classList.add('clicked');
+
+          if (moveInterval) clearInterval(moveInterval);
+
+          cucumber.classList.add('growing');
+
+          setTimeout(() => {
+            cucumber.classList.add('disappearing');
+          }, 1000);
+
+          setTimeout(() => {
+            cucumber.remove();
+
+            const textBox = document.createElement('div');
+            textBox.className = 'text-box';
+            textBox.textContent = words[index];
+            container.appendChild(textBox);
+
+            const idx = containers.findIndex(c => c.element === container);
+            if (idx !== -1) containers.splice(idx, 1);
+          }, 1800);
+        });
+      }
+
+      function startMovement(containerData) {
+        return setInterval(() => {
+          const { element, velocity } = containerData;
+
+          let left = parseFloat(element.style.left) || 0;
+          let top = parseFloat(element.style.top) || 0;
+
+          // Применяем движение
+          left += velocity.x / 10;
+          top += velocity.y / 10;
+
+          // Отталкивание от других
+          containers.forEach(other => {
+            if (other.element === element || !document.body.contains(other.element)) return;
+
+            const rect1 = element.getBoundingClientRect();
+            const rect2 = other.element.getBoundingClientRect();
+
+            const dx = (rect2.left + rect2.width / 2) - (rect1.left + rect1.width / 2);
+            const dy = (rect2.top + rect2.height / 2) - (rect1.top + rect1.height / 2);
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < 150) {
+              const force = 0.7;
+              velocity.x -= dx / distance * force;
+              velocity.y -= dy / distance * force;
+            }
+          });
+
+          // Ограничение движения — нижняя центральная зона
+          const minX = 20, maxX = 80;
+          const minY = 50, maxY = 75;
+
+          if (left <= minX || left >= maxX) {
+            velocity.x *= -1;
+            left = left < minX ? minX : maxX;
+          }
+          if (top <= minY || top >= maxY) {
+            velocity.y *= -1;
+            top = top < minY ? minY : maxY;
+          }
+
+          element.style.left = `${left}%`;
+          element.style.top = `${top}%`;
+
+          velocity.x *= 0.98;
+          velocity.y *= 0.98;
+        }, 60);
+      }
+    });
+  </script>
+</body>
+</html>
