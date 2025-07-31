@@ -21,6 +21,7 @@
       display: flex;
       justify-content: center;
       align-items: flex-end;
+      pointer-events: none; /* Контейнер не блокирует клики */
     }
 
     .cucumber {
@@ -31,6 +32,7 @@
       cursor: pointer;
       transition: all 2s cubic-bezier(0.34, 1.56, 0.64, 1);
       transform-origin: bottom center;
+      pointer-events: auto; /* Только сама картинка кликабельна */
     }
 
     .cucumber img {
@@ -55,8 +57,8 @@
     }
 
     .growing {
-      width: 180px;
-      height: 300px;
+      width: 144px;   /* Уменьшено на 20% (было 180) */
+      height: 240px;  /* Пропорционально: 300 * 0.8 = 240 */
     }
 
     .disappearing {
@@ -79,8 +81,9 @@
       border-radius: 8px;
       white-space: nowrap;
       box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
-      pointer-events: none;
+      pointer-events: none; /* Текст не мешает кликать */
       text-align: center;
+      z-index: 1;
     }
   </style>
 </head>
@@ -91,8 +94,7 @@
       "Лети", "Сияй", "Измени", "Побеждай"
     ];
 
-    // Храним все контейнеры и их данные
-    const containers = [];
+    const containers = []; // Все активные контейнеры
 
     document.addEventListener('DOMContentLoaded', function () {
       const body = document.body;
@@ -111,41 +113,21 @@
         cucumber.innerHTML = `<img src="https://i.pinimg.com/originals/fc/a7/66/fca766643693b021645b276bd61ad09e.png" alt="Огурец">`;
         container.appendChild(cucumber);
 
-        // Направление движения (dx/dy)
+        // Начальная скорость
         const velocity = {
           x: (Math.random() - 0.5) * 8,
           y: (Math.random() - 0.5) * 8
         };
 
-        // Случайное появление с края
+        // Появление с края
         const side = Math.floor(Math.random() * 4);
         let startX, startY, endX, endY;
 
         switch (side) {
-          case 0: // сверху
-            startX = Math.random() * 100;
-            startY = -10;
-            endX = startX;
-            endY = Math.random() * 30 + 10;
-            break;
-          case 1: // справа
-            startX = 100;
-            startY = Math.random() * 100;
-            endX = 85;
-            endY = startY;
-            break;
-          case 2: // снизу
-            startX = Math.random() * 100;
-            startY = 100;
-            endX = startX;
-            endY = Math.random() * 70 + 10;
-            break;
-          case 3: // слева
-            startX = -10;
-            startY = Math.random() * 100;
-            endX = 15;
-            endY = startY;
-            break;
+          case 0: startX = Math.random() * 100; startY = -10; endX = startX; endY = 20 + Math.random() * 20; break;
+          case 1: startX = 100; startY = Math.random() * 100; endX = 85; endY = startY; break;
+          case 2: startX = Math.random() * 100; startY = 100; endX = startX; endY = 40 + Math.random() * 30; break;
+          case 3: startX = -10; startY = Math.random() * 100; endX = 15; endY = startY; break;
         }
 
         container.style.left = `${startX}%`;
@@ -157,7 +139,7 @@
           container.style.top = `${endY}%`;
         }, 50);
 
-        // Добавляем в общий массив
+        // Добавляем в общий список
         const containerData = { element: container, velocity };
         containers.push(containerData);
 
@@ -187,7 +169,7 @@
             textBox.textContent = words[index];
             container.appendChild(textBox);
 
-            // Удаляем контейнер из массива (чтобы не мешал другим)
+            // Убираем из списка проверки, но оставляем в DOM
             const idx = containers.findIndex(c => c.element === container);
             if (idx !== -1) containers.splice(idx, 1);
           }, 1800);
@@ -197,48 +179,53 @@
       function startSmartMovement(containerData) {
         return setInterval(() => {
           const { element, velocity } = containerData;
-          const rect = element.getBoundingClientRect();
-          const centerX = rect.left + rect.width / 2;
-          const centerY = rect.top + rect.height / 2;
 
-          // Проверяем расстояние до других контейнеров
+          // Ограничение движения — только центр экрана (например, 20%-80%)
+          let left = parseFloat(element.style.left) || 0;
+          let top = parseFloat(element.style.top) || 0;
+
+          // Применяем движение
+          left += velocity.x / 10;
+          top += velocity.y / 10;
+
+          // Отталкивание от других контейнеров
           containers.forEach(other => {
-            if (other.element === element) return;
+            if (other.element === element || !document.body.contains(other.element)) return;
 
-            const otherRect = other.element.getBoundingClientRect();
-            const otherCenterX = otherRect.left + otherRect.width / 2;
-            const otherCenterY = otherRect.top + otherRect.height / 2;
+            const rect1 = element.getBoundingClientRect();
+            const rect2 = other.element.getBoundingClientRect();
 
-            const dx = otherCenterX - centerX;
-            const dy = otherCenterY - centerY;
+            const dx = (rect2.left + rect2.width / 2) - (rect1.left + rect1.width / 2);
+            const dy = (rect2.top + rect2.height / 2) - (rect1.top + rect1.height / 2);
             const distance = Math.sqrt(dx * dx + dy * dy);
 
-            // Если слишком близко — "отталкиваемся"
-            if (distance < 150) { // 150px — минимальное расстояние
-              const force = 0.8;
+            if (distance < 150) {
+              const force = 0.7;
               velocity.x -= dx / distance * force;
               velocity.y -= dy / distance * force;
             }
           });
 
-          // Применяем движение
-          let left = parseFloat(element.style.left) || 0;
-          let top = parseFloat(element.style.top) || 0;
+          // Границы — центральная зона
+          const minX = 20, maxX = 80;
+          const minY = 20, maxY = 70;
 
-          left += velocity.x / 10; // плавное движение
-          top += velocity.y / 10;
-
-          // Лёгкая коррекция скорости — чтобы не улетели слишком быстро
-          velocity.x *= 0.98;
-          velocity.y *= 0.98;
-
-          // Границы экрана
-          left = Math.max(5, Math.min(left, 95));
-          top = Math.max(5, Math.min(top, 85));
+          if (left <= minX || left >= maxX) {
+            velocity.x *= -1; // Отскок
+            left = left < minX ? minX : maxX;
+          }
+          if (top <= minY || top >= maxY) {
+            velocity.y *= -1;
+            top = top < minY ? minY : maxY;
+          }
 
           element.style.left = `${left}%`;
           element.style.top = `${top}%`;
-        }, 60); // Частое обновление для плавности
+
+          // Затухание скорости
+          velocity.x *= 0.98;
+          velocity.y *= 0.98;
+        }, 60);
       }
     });
   </script>
